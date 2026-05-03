@@ -1,0 +1,288 @@
+# MASTER PROMPT – „HĂLCHIU DIGITAL” (PWA + GOVERNANȚĂ + PLATFORMĂ CIVICĂ)
+
+Construiește o aplicație **PWA full-stack numită „Hălchiu Digital”** care funcționează ca infrastructură digitală pentru o comună: sesizări, evenimente, business local, comunicare administrativă.
+
+⚠️ REGULĂ CRITICĂ: NU rescrie sisteme existente. DOAR extinde incremental (patch-based, backward compatible).
+
+---
+
+# 1. ARHITECTURĂ GENERALĂ
+
+Sistem multi-tenant scalabil național:
+
+## CORE SYSTEM (identic peste toate comunele)
+
+* feed civic
+* sesizări
+* evenimente
+* business local
+* notificări
+* profil utilizator
+* admin dashboard
+
+## CONFIGURARE LOCALĂ
+
+* nume comună
+* branding
+* categorii locale
+
+## MODULE OPȚIONALE
+
+* buget participativ
+* turism
+* educație
+* agricultură
+
+---
+
+# 2. PWA REQUIREMENTS
+
+* instalare ca app (Add to Home Screen)
+* Web Push Notifications
+* service worker caching:
+
+  * feed
+  * evenimente
+  * anunțuri
+* offline fallback page
+* fast load (<1s perceput)
+* lazy loading + pagination
+
+---
+
+# 3. FRONTEND (NEXT.JS + REACT + TS)
+
+Structură:
+
+/app
+/home
+/community
+/events
+/business
+/profile
+/auth
+
+/components
+/features
+/services
+/store
+/hooks
+/public (manifest.json, sw.js)
+
+---
+
+# 4. UI STRUCTURĂ
+
+NAVIGAȚIE:
+
+* Home
+* Comunitate
+* *
+* Evenimente
+* Profil
+
+---
+
+HOME FEED:
+
+* anunțuri oficiale
+* evenimente
+* sesizări
+* business local
+
+UX:
+
+* infinite scroll
+* skeleton loading
+* swipe cards
+
+---
+
+SESIZĂRI:
+
+* foto + GPS
+* categorie
+* status tracking
+
+---
+
+EVENIMENTE:
+
+* listă + calendar
+* RSVP
+
+---
+
+BUSINESS:
+
+* listare
+* profil firmă
+
+---
+
+# 5. BACKEND (NODE.JS / NESTJS SIMPLU)
+
+Modules:
+
+* auth
+* users
+* feed
+* reports
+* events
+* business
+* notifications
+* admin
+
+---
+
+# 6. DATABASE (POSTGRESQL MULTI-TENANT)
+
+Toate tabelele includ:
+tenant_id
+
+users:
+
+* id, name, role, verified, points
+
+reports:
+
+* status: OPEN | IN_PROGRESS | RESOLVED | REJECTED
+
+events:
+
+* status: PENDING | APPROVED
+
+business:
+
+* verified: boolean
+
+feed:
+
+* type, reference_id
+
+notifications:
+
+* read/unread
+
+---
+
+# 7. API
+
+AUTH:
+POST /auth/register
+POST /auth/verify
+
+FEED:
+GET /feed
+
+REPORTS:
+POST /reports
+GET /reports
+PATCH /reports/:id (status + reply)
+
+EVENTS:
+GET /events
+POST /events
+
+BUSINESS:
+GET /business
+POST /business
+
+---
+
+# 8. PWA SERVICE WORKER
+
+* cache static routes
+* cache feed/events
+* offline fallback
+* background sync minimal
+
+---
+
+# 9. GOVERNANȚĂ SISTEM (FOARTE IMPORTANT)
+
+## SESIZĂRI (FLOW OBLIGATORIU)
+
+* status:
+  OPEN → IN_PROGRESS → RESOLVED → REJECTED
+
+* fiecare sesizare trebuie să aibă:
+
+  * răspuns admin obligatoriu pentru închidere
+
+---
+
+## BUSINESS MARKETPLACE
+
+* VERIFIED business:
+
+  * aprobat manual sau validat
+
+* UNVERIFIED:
+
+  * vizibilitate redusă
+  * fără prioritizare
+
+---
+
+## EVENIMENTE
+
+* PENDING → APPROVED → LIVE
+
+* doar APPROVED sunt publice
+
+---
+
+## POSTĂRI / CONȚINUT
+
+* sistem de moderation:
+  PENDING → APPROVED → REJECTED
+
+* nimic nu este direct public fără validare (except oficial)
+
+---
+
+## TRUST SCORE UTILIZATOR
+
+* crește prin:
+
+  * contribuții valide
+* scade prin:
+
+  * spam / conținut fals
+
+---
+
+# 10. ENGAGEMENT (FĂRĂ CONTROL VIZIBIL)
+
+* pull-based engagement (nu push agresiv)
+* max 1–2 notificări/zi relevante
+* „Ce s-a schimbat azi în comuna ta”
+* social proof natural
+
+---
+
+# 11. SCALARE NAȚIONALĂ
+
+* multi-tenant architecture
+* aceeași codebase
+* configurare per comună
+
+Faze:
+
+1. pilot
+2. regional
+3. județ
+4. național
+
+---
+
+# 12. PRINCIPIU FINAL
+
+Aplicația trebuie să devină:
+
+* infrastructură digitală locală
+* sistem administrativ standard
+* platformă civic-operatională reală
+
+Fără haos. Fără conținut nevalidat. Fără postări directe fără control.

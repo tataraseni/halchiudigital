@@ -1,0 +1,256 @@
+# MASTER PROMPT – „HĂLCHIU DIGITAL” (EXPANDED COMMUNITY PLATFORM – NON-BREAKING EXTENSION)
+
+Construiește și extinde aplicația **„Hălchiu Digital” (PWA full-stack)** ca o platformă digitală pentru administrație locală, comunitate și servicii publice.
+
+⚠️ REGULĂ ABSOLUTĂ:
+NU modifica, NU rescrie și NU elimina nimic din funcționalitatea existentă.
+TOATE cerințele sunt implementate DOAR ca extensii compatibile (non-breaking, incremental, patch-based).
+
+---
+
+# 1. VIZIUNE DE PRODUS
+
+Aplicația devine un **ecosistem digital local** format din:
+
+* Administrație publică eficientizată
+* Hub comunitar activ
+* Informații locale centralizate
+* Servicii esențiale accesibile
+* Mobilizare civică (voluntariat + participare)
+
+---
+
+# 2. ARHITECTURĂ (OBLIGATORIU NEMODIFICATĂ)
+
+## CORE SYSTEM (existent, nu se schimbă)
+
+* feed civic
+* sesizări
+* evenimente
+* business local
+* notificări
+* profil utilizator
+* admin dashboard
+
+## EXTENSII NOI (adăugare doar ca module)
+
+* servicii locale (îmbunătățit)
+* marketplace local
+* anunțuri comunitare
+* joburi locale
+* voluntariat civic
+* transport & informații locale
+
+---
+
+# 3. PRINCIPIU DE EXTINDERE
+
+Toate funcționalitățile noi trebuie să respecte:
+
+* zero modificare la logică existentă
+* reutilizare API existent
+* extensie prin module noi
+* compatibilitate completă cu backend-ul actual
+
+---
+
+# 4. MODUL: SERVICII LOCALE (EXPANDAT)
+
+Extinde modul existent de servicii într-un **director inteligent de infrastructură locală**.
+
+## TIPURI:
+
+* medic de familie
+* dispensar / cabinet medical
+* farmacie
+* primărie
+* poștă
+* școală / grădiniță
+* utilități (apă, electricitate, salubritate)
+
+## FUNCȚIONALITĂȚI:
+
+* căutare rapidă
+* categorii interactive
+* program în timp real
+* contact direct (call / navigate)
+* status (deschis / închis / aglomerat opțional)
+
+## INTEGRARE INTELIGENTĂ:
+
+* sugestii automate din sesizări (ex: problemă medicală → medic familie)
+* afișare contextuală în feed (ex: schimbare program instituție)
+
+---
+
+# 5. MODUL: MARKETPLACE LOCAL
+
+Un sistem de economie locală ușoară.
+
+## TIPURI DE CONȚINUT:
+
+* produse locale (legume, lapte, miere, etc.)
+* servicii mici (reparații, grădinărit)
+* anunțuri comerciale simple
+
+## FUNCȚIONALITĂȚI:
+
+* listare simplă tip feed
+* contact direct între utilizatori
+* fără plăți integrate în MVP
+* moderare opțională
+
+## REGULI:
+
+* conținutul trebuie să fie local
+* fără spam comercial agresiv
+* ranking bazat pe relevanță locală
+
+---
+
+# 6. MODUL: ANUNȚURI COMUNITARE
+
+Spațiu pentru comunicare informală:
+
+## TIPURI:
+
+* pierdut/găsit
+* donații
+* meseriași
+* anunțuri locale mici
+
+## REGULI:
+
+* expirare automată (ex: 7–14 zile)
+* limitare postări per utilizator
+* vizibilitate bazată pe relevanță
+
+---
+
+# 7. MODUL: JOBURI LOCALE
+
+## FUNCȚIONALITĂȚI:
+
+* postări firme locale
+* filtrare geografică (doar comună / zonă)
+* contact direct
+
+## SCOP:
+
+* reducerea navetei
+* conectarea firmelor locale cu cetățenii
+
+---
+
+# 8. MODUL: VOLUNTARIAT CIVIC
+
+## FUNCȚIONALITĂȚI:
+
+* evenimente de tip „Particip”
+* campanii de ecologizare
+* acțiuni comunitare
+
+## INTERACȚIUNE:
+
+* buton „Particip”
+* listă participanți
+* notificări de eveniment
+
+## SCOP:
+
+* coeziune socială
+* implicare civică fără presiune
+
+---
+
+# 9. MODUL: INFORMAȚII LOCALE & MOBILITATE
+
+## CONȚINUT:
+
+* transport public
+* program autobuze
+* evenimente locale
+* ghid local (turistic și utilitar)
+
+## FUNCȚIONALITĂȚI:
+
+* actualizare periodică
+* afișare simplificată
+* integrare în feed
+
+---
+
+# 10. ENGAGEMENT (FĂRĂ MANIPULARE VIZIBILĂ)
+
+## PRINCIPII:
+
+* pull-based (nu push agresiv)
+* max 1–2 notificări/zi relevante
+* valoare reală la fiecare deschidere
+
+## HOOK ZILNIC:
+
+* „Ce s-a schimbat azi în comuna ta”
+* „Ce s-a rezolvat”
+* „Ce este nou în zona ta”
+
+## SOCIAL PROOF:
+
+* „X persoane au participat”
+* „Y sesizări rezolvate”
+
+---
+
+# 11. GOVERNANȚĂ ȘI CONTROL CALITATE
+
+## SESIZĂRI:
+
+OPEN → IN_PROGRESS → RESOLVED → REJECTED
+
+## EVENIMENTE:
+
+PENDING → APPROVED → LIVE
+
+## MARKETPLACE:
+
+* moderare soft (limitare vizibilitate spam)
+* ranking pe reputație
+
+## UTILIZATORI:
+
+* trust score simplu (activitate + validitate contribuții)
+
+---
+
+# 12. ADMIN STRAT
+
+* toate datele sunt centralizate
+* control status conținut
+* răspuns obligatoriu la sesizări
+* dashboard simplificat
+
+---
+
+# 13. PRINCIPIU FINAL DE SISTEM
+
+Aplicația trebuie să funcționeze ca:
+
+* infrastructură digitală locală
+* hub comunitar activ
+* sistem administrativ eficient
+* piață locală ușoară
+* platformă de mobilizare civică
+
+FĂRĂ să afecteze funcționalitățile existente.
+
+---
+
+# 14. REZULTAT AȘTEPTAT
+
+Un sistem care:
+
+* este deja funcțional (core)
+* se extinde fără breaking changes
+* devine util zilnic pentru cetățeni
+* reduce birocrația
+* crește implicarea comunitară

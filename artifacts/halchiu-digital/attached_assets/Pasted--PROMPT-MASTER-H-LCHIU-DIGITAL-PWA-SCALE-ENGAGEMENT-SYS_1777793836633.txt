@@ -1,0 +1,245 @@
+# PROMPT MASTER – „HĂLCHIU DIGITAL” (PWA + SCALE + ENGAGEMENT SYSTEM)
+
+## 0. CONTEXT GENERAL
+
+Construiește și extinde aplicația PWA „Hălchiu Digital” ca un **sistem digital local pentru administrație, comunitate și economie locală**.
+
+⚠️ REGULĂ CRITICĂ:
+
+* NU rescrie aplicația existentă
+* NU schimba structura actuală
+* DOAR adaugă incremental, compatibil și non-intruziv
+
+---
+
+## 1. ARHITECTURĂ GENERALĂ
+
+Aplicația este formată din 3 straturi:
+
+### 1.1 CORE SYSTEM (fix)
+
+* feed civic
+* sesizări
+* evenimente
+* business local
+* profil utilizator
+* admin dashboard
+
+👉 identic în toate comunele
+
+---
+
+### 1.2 CONFIGURARE LOCALĂ
+
+* nume comună
+* branding
+* categorii locale
+* structuri administrative
+
+👉 fără dezvoltare nouă
+
+---
+
+### 1.3 MODULE OPȚIONALE
+
+* buget participativ
+* educație
+* turism
+* agricultură
+* marketplace extins
+
+👉 activabile ca pluginuri
+
+---
+
+## 2. PWA REQUIREMENTS
+
+* install prompt (Add to Home Screen)
+* Web Push notifications
+* service worker caching:
+
+  * feed
+  * evenimente
+  * anunțuri
+* offline fallback UI
+* fast loading (<1s perceput)
+* lazy loading + pagination
+
+---
+
+## 3. UI / UX (FĂRĂ SCHIMBAREA STRUCTURII)
+
+### Navigație fixă:
+
+* Home
+* Comunitate
+* *
+* Evenimente
+* Profil
+
+---
+
+### HOME (FEED)
+
+Carduri:
+
+* anunțuri oficiale
+* evenimente
+* sesizări
+* business local
+
+Reguli:
+
+* skeleton loading
+* swipe gestures
+* infinite scroll
+
+---
+
+### QUICK ACTION (+)
+
+* raportare problemă
+* postare
+* eveniment
+
+---
+
+### SESIZĂRI
+
+* foto + GPS
+* categorie
+* status tracking
+
+---
+
+### COMUNITATE
+
+* postări
+* comentarii
+* grupuri locale
+
+---
+
+### EVENIMENTE
+
+* calendar
+* RSVP
+
+---
+
+### BUSINESS LOCAL
+
+* listare
+* profil firmă
+* contact
+
+---
+
+### PROFIL
+
+* activitate
+* puncte
+* badge-uri
+
+---
+
+## 4. PATCH SYSTEM (ÎMBUNĂTĂȚIRI INVIZIBILE)
+
+Fără UI change:
+
+* service worker caching optimizat
+* preload feed
+* offline banner discret
+* install prompt o singură dată
+* micro-interacțiuni (toast, fade, skeleton)
+
+---
+
+## 5. GROWTH LAYER (FĂRĂ ADS)
+
+* onboarding fizic (QR în comună)
+* utilitate obligatorie (sesizări/programări)
+* social proof local („X persoane au raportat”)
+* ambasadori locali
+* zero advertising
+
+---
+
+## 6. BEHAVIOR LAYER (ENGAGEMENT NATURAL)
+
+* „Ce s-a schimbat azi în comuna ta?”
+* feed zilnic relevant
+* max 1–2 notificări/zi
+* fără push agresiv
+* progres comunitar vizibil
+
+---
+
+## 7. ADMIN CONTROL LAYER
+
+* toate sesizările centralizate
+* dashboard pentru primărie
+* workflow digital obligatoriu
+* status public al lucrărilor
+* rapoarte automate
+
+---
+
+## 8. ENGAGEMENT PRINCIPLES (FĂRĂ SENZAȚIE DE CONTROL)
+
+* pull, nu push
+* valoare la fiecare deschidere
+* social proof natural
+* curiozitate locală
+* micro-recompense cognitive
+
+Interzis:
+
+* spam notificări
+* streak-uri agresive
+* presiune comportamentală vizibilă
+
+---
+
+## 9. SCALARE NAȚIONALĂ
+
+Arhitectură multi-comună:
+
+* core engine identic
+* configurare locală separată
+* module opționale
+
+Model de scalare:
+
+1. comună pilot
+2. cluster regional
+3. județ
+4. național
+
+---
+
+## 10. MOAT (AVANTAJ COMPETITIV)
+
+* date locale structurate
+* workflow administrativ integrat
+* efect de rețea între comune
+* infrastructură civic-digitală
+
+---
+
+## 11. PRINCIPIU FINAL
+
+Aplicația trebuie să devină:
+
+* infrastructură locală, nu „app”
+* rutină zilnică, nu opțional
+* sistem administrativ, nu social media
+
+---
+
+## OUTPUT AȘTEPTAT
+
+* PWA complet funcțional
+* UI simplu, rapid, mobile-first
+* backend scalabil
+* sistem modular pentru mai multe comune

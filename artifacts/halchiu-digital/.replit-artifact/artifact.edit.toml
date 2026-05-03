@@ -1,0 +1,26 @@
+kind = "web"
+previewPath = "/"
+title = "Hălchiu Digital"
+version = "1.0.0"
+
+[[services]]
+localPort = 3000
+name = "Hălchiu Digital"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/halchiu-digital run dev"
+
+[services.production]
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/halchiu-digital", "run", "build"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = ["pnpm", "--filter", "@workspace/halchiu-digital", "run", "start"]
+
+[services.production.run.env]
+NODE_ENV = "production"

@@ -1,0 +1,387 @@
+# MASTER PROMPT – „HĂLCHIU DIGITAL” (PWA FULL STACK + SCALABLE GOVERNMENT PLATFORM)
+
+## 0. CONTEXT
+
+Construiește o aplicație **PWA full-stack** numită „Hălchiu Digital”, care devine un sistem digital local pentru administrație publică, comunitate și economie locală.
+
+⚠️ REGULĂ CRITICĂ:
+
+* NU rescrie sistem existent
+* NU modifica structuri existente
+* DOAR extinde incremental (patch-based architecture)
+* TOTUL trebuie să fie backward compatible
+
+---
+
+# 1. ARHITECTURĂ GENERALĂ
+
+Sistemul este multi-tenant și scalabil la nivel național:
+
+## STRATURI:
+
+### 1. CORE ENGINE (fix, identic peste toate comunele)
+
+* feed civic
+* sesizări
+* evenimente
+* business local
+* notificări
+* profil utilizator
+* admin dashboard
+
+---
+
+### 2. CONFIGURAȚIE LOCALĂ (per comună)
+
+* nume
+* branding
+* categorii locale
+* structuri administrative
+
+---
+
+### 3. MODULE EXTENSIBILE (plugin system)
+
+* buget participativ
+* turism
+* educație
+* agricultură
+* marketplace extins
+
+---
+
+# 2. PWA REQUIREMENTS
+
+Aplicația trebuie să fie 100% PWA:
+
+* install prompt (Add to Home Screen)
+* Web Push Notifications
+* Service Worker caching:
+
+  * feed
+  * evenimente
+  * anunțuri
+* offline fallback page
+* lazy loading + pagination
+* fast load (<1s perceived)
+
+---
+
+# 3. FRONTEND (NEXT.JS + REACT + TYPESCRIPT)
+
+## STRUCTURĂ:
+
+/src
+/app
+/home
+/community
+/events
+/business
+/profile
+/auth
+
+/components
+/ui
+/cards
+/feed
+/modals
+/navigation
+
+/features
+/feed
+/reports
+/events
+/business
+/notifications
+/admin
+
+/services
+api.ts
+auth.ts
+geo.ts
+cache.ts
+notifications.ts
+
+/store
+user.store.ts
+feed.store.ts
+
+/hooks
+useFeed.ts
+usePWA.ts
+useGeo.ts
+
+/public
+manifest.json
+sw.js
+icons/
+
+---
+
+# 4. UI STRUCTURE (FĂRĂ MODIFICĂRI DE LOGICĂ EXISTENTĂ)
+
+## NAVIGAȚIE FIXĂ:
+
+* Home
+* Comunitate
+* *
+* Evenimente
+* Profil
+
+---
+
+## HOME (FEED CORE)
+
+Carduri:
+
+* anunțuri oficiale
+* evenimente
+* sesizări
+* business local
+
+UX:
+
+* infinite scroll
+* skeleton loading
+* swipe gestures
+
+---
+
+## QUICK ACTION (+)
+
+* raportare problemă
+* postare
+* eveniment
+
+---
+
+## SESIZĂRI
+
+* foto + GPS
+* categorie
+* status tracking
+
+---
+
+## EVENIMENTE
+
+* calendar
+* RSVP
+
+---
+
+## BUSINESS LOCAL
+
+* listare
+* profil firmă
+
+---
+
+## PROFIL
+
+* puncte
+* activitate
+* badge-uri
+
+---
+
+# 5. BACKEND (NODE.JS / NESTJS)
+
+## STRUCTURĂ:
+
+/src
+/modules
+auth
+users
+feed
+reports
+events
+business
+notifications
+admin
+geo
+
+/common
+/config
+
+---
+
+# 6. DATABASE (POSTGRESQL MULTI-TENANT)
+
+## PRINCIPIU:
+
+Toate tabelele includ:
+
+* tenant_id (comuna)
+
+---
+
+## USERS
+
+id, name, phone, role, address_id, verified, points
+
+---
+
+## REPORTS
+
+id, user_id, category, description, lat, lng, status
+
+---
+
+## FEED
+
+id, type, reference_id, priority_score
+
+---
+
+## EVENTS
+
+id, title, date, location
+
+---
+
+## BUSINESS
+
+id, name, category, rating
+
+---
+
+## NOTIFICATIONS
+
+id, user_id, type, message, read
+
+---
+
+# 7. API STRUCTURE
+
+AUTH:
+
+* POST /auth/register
+* POST /auth/verify
+
+FEED:
+
+* GET /feed
+
+REPORTS:
+
+* POST /reports
+* GET /reports
+
+EVENTS:
+
+* GET /events
+
+BUSINESS:
+
+* GET /business
+
+NOTIFICATIONS:
+
+* GET /notifications
+
+---
+
+# 8. PWA SERVICE WORKER
+
+* cache static routes
+* cache feed data
+* offline fallback
+* background sync
+
+---
+
+# 9. REAL-TIME SYSTEM
+
+WebSockets pentru:
+
+* status sesizări
+* notificări live
+* updates feed
+
+---
+
+# 10. MULTI-COMMUNE SCALING MODEL
+
+Sistemul trebuie să suporte:
+
+* multiple comune (tenants)
+* aceeași codebase
+* configurare separată per comună
+
+---
+
+# 11. GROWTH LAYER (FĂRĂ ADS)
+
+* onboarding fizic cu QR
+* utilitate obligatorie (sesizări / programări)
+* social proof local
+* ambasadori locali
+
+---
+
+# 12. BEHAVIOR LAYER (ENGAGEMENT NATURAL)
+
+* „Ce s-a schimbat azi în comuna ta”
+* feed zilnic relevant
+* max 1–2 notificări/zi
+* fără push agresiv
+
+---
+
+# 13. ADMIN CONTROL LAYER
+
+* dashboard complet primărie
+* workflow digital obligatoriu
+* status public lucrări
+* centralizare cereri
+
+---
+
+# 14. ENGAGEMENT PRINCIPLES
+
+* pull, nu push
+* valoare la fiecare deschidere
+* social proof natural
+* fără manipulare vizibilă
+* fără notificări agresive
+
+---
+
+# 15. PWA SERVICE HOOK
+
+* install prompt
+* offline detection
+* caching strategy
+* background sync
+
+---
+
+# 16. SCALABILITATE NAȚIONALĂ
+
+Model:
+
+1. comună pilot
+2. cluster regional
+3. județ
+4. național
+
+---
+
+# 17. PRINCIPIU FINAL
+
+Aplicația trebuie să devină:
+
+* infrastructură digitală locală
+* sistem administrativ standard
+* platformă multi-comună scalabilă
+
+---
+
+# OUTPUT FINAL
+
+* PWA complet funcțional
+* frontend modular
+* backend scalabil
+* multi-tenant architecture
+* zero breaking changes

@@ -1,0 +1,331 @@
+# MASTER PROMPT – „HĂLCHIU DIGITAL” (PWA + SERVICII LOCALE + GOVERNANȚĂ + SCALARE)
+
+Construiește o aplicație **PWA full-stack numită „Hălchiu Digital”** pentru administrație locală, cetățeni și servicii publice.
+
+⚠️ REGULĂ CRITICĂ:
+NU rescrie sistemul existent. DOAR extinde incremental (patch-based, backward compatible).
+
+---
+
+# 1. ARHITECTURĂ GENERALĂ
+
+Sistem multi-tenant scalabil național:
+
+## CORE SYSTEM (fix)
+
+* feed civic
+* sesizări
+* evenimente
+* business local
+* notificări
+* profil utilizator
+* admin dashboard
+
+## CONFIG LOCAL
+
+* nume comună
+* branding
+* categorii locale
+
+## MODULE EXTENSIBILE
+
+* buget participativ
+* educație
+* turism
+* agricultură
+* marketplace extins
+* SERVICII LOCALE (nou)
+
+---
+
+# 2. MODUL NOU: SERVICII LOCALE (CRITIC)
+
+Adaugă un modul „Servicii” fără a modifica structurile existente.
+
+## TIPURI DE SERVICII:
+
+* medic de familie
+* dispensar / cabinet medical
+* farmacie
+* primărie
+* poliție locală
+* poștă
+* școală / grădiniță
+* utilități (apă, electricitate, salubritate)
+
+---
+
+## UI – SERVICII
+
+Ecran dedicat „Servicii”:
+
+* search bar
+* categorii (chips):
+
+  * medical
+  * administrație
+  * educație
+  * utilități
+  * poștă
+
+---
+
+## CARD SERVICIU
+
+Fiecare serviciu conține:
+
+* nume
+* categorie
+* program
+* status (deschis/închis)
+* contact
+* locație (hartă)
+* acțiuni:
+
+  * sună
+  * navighează
+  * programează
+
+---
+
+## INTEGRARE ÎN SISTEM
+
+* sugestii automate din sesizări → servicii relevante
+* legare cu evenimente (ex: campanii medicale)
+* afișare în feed când se schimbă programul
+
+---
+
+# 3. PWA REQUIREMENTS
+
+* install prompt (Add to Home Screen)
+* Web Push Notifications
+* service worker caching:
+
+  * feed
+  * evenimente
+  * servicii
+* offline fallback page
+* lazy loading + pagination
+* fast load (<1s perceived)
+
+---
+
+# 4. FRONTEND (NEXT.JS + REACT + TS)
+
+STRUCTURĂ:
+
+/app
+/home
+/community
+/events
+/business
+/services (NOU)
+/profile
+/auth
+
+/components
+/features
+/services
+/store
+/hooks
+/public (manifest.json, sw.js)
+
+---
+
+# 5. UI STRUCTURĂ
+
+NAVIGAȚIE:
+
+* Home
+* Comunitate
+* *
+* Evenimente
+* Profil
+
+---
+
+HOME:
+
+* feed civic (anunțuri, evenimente, sesizări, business)
+
+---
+
+SESIZĂRI:
+
+* foto + GPS
+* categorie
+* status tracking
+
+---
+
+EVENIMENTE:
+
+* listă + calendar
+* RSVP
+
+---
+
+BUSINESS:
+
+* listare firme
+* profil
+
+---
+
+SERVICII (NOU):
+
+* listă servicii publice
+* căutare
+* carduri interactive
+
+---
+
+# 6. BACKEND (NODE.JS / NESTJS SIMPLU)
+
+MODULE:
+
+* auth
+* users
+* feed
+* reports
+* events
+* business
+* services (NOU)
+* notifications
+* admin
+
+---
+
+# 7. DATABASE (POSTGRESQL MULTI-TENANT)
+
+Toate tabelele includ:
+tenant_id
+
+users:
+
+* id, name, role, verified, points
+
+reports:
+
+* status: OPEN | IN_PROGRESS | RESOLVED | REJECTED
+
+events:
+
+* status: PENDING | APPROVED
+
+business:
+
+* verified: boolean
+
+services (NOU):
+
+* id
+* name
+* category
+* type
+* phone
+* address
+* lat
+* lng
+* schedule
+* status
+
+feed:
+
+* type, reference_id
+
+---
+
+# 8. API
+
+AUTH:
+POST /auth/register
+POST /auth/verify
+
+FEED:
+GET /feed
+
+REPORTS:
+POST /reports
+PATCH /reports/:id
+
+EVENTS:
+GET /events
+
+BUSINESS:
+GET /business
+
+SERVICES (NOU):
+GET /services
+POST /services
+PATCH /services/:id
+
+---
+
+# 9. PWA SERVICE WORKER
+
+* cache static routes
+* cache feed/events/services
+* offline fallback
+* background sync minimal
+
+---
+
+# 10. GOVERNANȚĂ SISTEM
+
+## SESIZĂRI:
+
+OPEN → IN_PROGRESS → RESOLVED → REJECTED
+
+## EVENIMENTE:
+
+PENDING → APPROVED → LIVE
+
+## BUSINESS:
+
+VERIFIED / UNVERIFIED
+
+## POSTĂRI:
+
+PENDING → APPROVED → REJECTED
+
+## SERVICII:
+
+ADMIN MANAGED (single source of truth)
+
+---
+
+# 11. ENGAGEMENT (FĂRĂ CONTROL VIZIBIL)
+
+* pull-based engagement
+* max 1–2 notificări/zi
+* „Ce s-a schimbat azi în comuna ta”
+* social proof natural
+
+---
+
+# 12. SCALARE NAȚIONALĂ
+
+* multi-tenant architecture
+* same codebase
+* per-commune configuration
+
+Faze:
+
+1. pilot
+2. regional
+3. județ
+4. național
+
+---
+
+# 13. PRINCIPIU FINAL
+
+Aplicația devine:
+
+* infrastructură digitală locală
+* sistem civic operațional
+* platformă standard pentru comune
+
+Fără haos. Fără date nevalidate. Fără modificări disruptive.

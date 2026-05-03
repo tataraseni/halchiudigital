@@ -1,0 +1,420 @@
+# PROMPT COMPLET – APLICAȚIE „HĂLCHIU DIGITAL” (VERSIUNE EXTREMĂ, PRODUCTION-READY)
+
+## 0. CONTEXT GENERAL
+
+Construiește o aplicație mobilă + PWA numită **„Hălchiu Digital”**, destinată cetățenilor comunei Hălchiu (Brașov), care funcționează ca un **ecosistem digital complet local**.
+
+Aplicația NU este doar informativă — trebuie să devină:
+
+* infrastructura digitală a comunei
+* canalul principal de comunicare
+* platformă de implicare civică
+* motor economic local
+* instrument zilnic indispensabil
+
+---
+
+## 1. OBIECTIVE PRINCIPALE
+
+1. Creșterea implicării civice
+2. Digitalizarea completă a interacțiunii cu primăria
+3. Activarea economiei locale
+4. Crearea unui „habit zilnic” (utilizare zilnică)
+5. Transparență administrativă totală
+
+---
+
+## 2. TIPURI DE UTILIZATORI
+
+### 2.1. CETĂȚEAN VERIFICAT
+
+* domiciliu în Hălchiu
+* acces complet la toate funcțiile
+
+### 2.2. VIZITATOR
+
+* acces limitat (read-only)
+* fără interacțiuni
+
+### 2.3. BUSINESS LOCAL
+
+* cont dedicat
+* listare produse/servicii
+
+### 2.4. ADMIN (PRIMĂRIE)
+
+* dashboard complet
+* control conținut
+* analytics
+
+---
+
+## 3. SISTEM DE ACCES (CRITIC – IMPLEMENTARE REALĂ)
+
+NU folosi doar GPS/IP.
+
+Implementare:
+
+* GPS check (soft validation)
+* IP check (fallback)
+* * VALIDARE IDENTITATE:
+
+  - CNP hashuit
+  - adresă validată
+  - OTP telefon
+
+Access logic:
+
+* nevalidat → doar vizitator
+* validat → acces complet
+
+---
+
+## 4. ARHITECTURĂ TEHNICĂ
+
+### Frontend:
+
+* React + Next.js (PWA)
+* React Native (mobile apps)
+
+### Backend:
+
+* Node.js + NestJS
+
+### Database:
+
+* PostgreSQL
+
+### Realtime:
+
+* WebSockets (Socket.io)
+
+### Storage:
+
+* AWS S3 / Cloudflare R2
+
+### Notifications:
+
+* Firebase Cloud Messaging
+
+### AI:
+
+* feed personalization
+* clasificare sesizări
+* recomandări
+
+---
+
+## 5. STRUCTURĂ COMPLETĂ UI (SCREEN BY SCREEN)
+
+### 5.1. ONBOARDING
+
+Ecrane:
+
+1. Welcome screen
+2. Select user type
+3. Input date personale
+4. Verificare OTP
+5. Selectare interese:
+
+   * familie
+   * agricultură
+   * business
+   * evenimente
+6. Final onboarding
+
+---
+
+### 5.2. HOME (FEED INTELIGENT)
+
+Elemente:
+
+* carduri:
+
+  * anunțuri primărie
+  * evenimente
+  * alerte
+  * postări comunitare
+  * oferte business
+
+Funcții:
+
+* scroll infinit
+* swipe lateral
+* AI ranking feed
+
+---
+
+### 5.3. MODUL „PRIMĂRIA”
+
+Funcții:
+
+* raportare problemă:
+
+  * poză
+  * locație GPS
+  * categorie
+* petiții
+* programări online
+* documente:
+
+  * cereri
+  * adeverințe
+* tracking status:
+
+  * în lucru
+  * rezolvat
+
+---
+
+### 5.4. MODUL „COMUNITATE”
+
+* forum structurat
+* întrebări/răspunsuri
+* grupuri:
+
+  * părinți
+  * tineri
+  * seniori
+  * agricultori
+
+Moderare:
+
+* AI + admin
+
+---
+
+### 5.5. MODUL „EVENIMENTE”
+
+* calendar
+* participare (RSVP)
+* reminder automat
+* share
+
+---
+
+### 5.6. MODUL „BUSINESS LOCAL”
+
+Funcții:
+
+* listare firme
+* produse
+* servicii
+* recenzii
+* contact direct
+* (opțional) comandă
+
+---
+
+### 5.7. MODUL „EDUCAȚIE”
+
+Conținut:
+
+* ghiduri:
+
+  * taxe
+  * sănătate
+  * agricultură
+* video-uri
+* notificări educaționale
+
+---
+
+### 5.8. MODUL „ALERTE”
+
+* urgențe
+* meteo
+* lucrări utilități
+* notificări critice (override silent)
+
+---
+
+### 5.9. MODUL „PARTICIPARE CIVICĂ”
+
+* sondaje
+* voturi
+* buget participativ
+
+---
+
+### 5.10. PROFIL UTILIZATOR
+
+* date personale
+* activitate
+* puncte
+* badge-uri
+
+---
+
+## 6. GAMIFICATION (RETENȚIE EXTREMĂ)
+
+Puncte pentru:
+
+* raportări
+* participare
+* evenimente
+* feedback
+
+Niveluri:
+
+* Nou venit
+* Cetățean activ
+* Influencer local
+* Lider comunitar
+
+Elemente:
+
+* badge-uri
+* clasamente
+* streak zilnic
+
+---
+
+## 7. NOTIFICĂRI INTELIGENTE
+
+Tipuri:
+
+* push personalizat AI
+* reminder taxe
+* evenimente relevante
+* alertă urgență
+
+Logică:
+
+* bazată pe comportament
+* bazată pe locație
+* bazată pe interese
+
+---
+
+## 8. SCHEMA DB (EXTINSĂ)
+
+Tables:
+
+users
+roles
+addresses
+posts
+comments
+events
+event_participants
+reports
+report_status
+businesses
+products
+orders
+votes
+notifications
+badges
+user_points
+
+---
+
+## 9. API STRUCTURE
+
+Auth:
+
+* POST /auth/register
+* POST /auth/verify
+
+Feed:
+
+* GET /feed
+
+Reports:
+
+* POST /reports
+* GET /reports
+
+Events:
+
+* GET /events
+* POST /events/join
+
+Business:
+
+* GET /businesses
+* POST /products
+
+Voting:
+
+* POST /vote
+* GET /votes
+
+---
+
+## 10. UX/UI DESIGN
+
+* mobile-first
+* dark mode
+* swipe gestures
+* card UI
+* zero clutter
+* loading ultra rapid
+
+---
+
+## 11. SECȚIUNE VIZITATORI
+
+Acces fără login:
+
+* prezentare comună
+* obiective turistice
+* evenimente
+* business local (read-only)
+
+---
+
+## 12. FUNCȚII WOW (DIFERENȚIATOR)
+
+* hartă live cu probleme raportate
+* status lucrări în timp real
+* „ce se întâmplă azi”
+* AI care recomandă implicare
+* scor personal de implicare
+
+---
+
+## 13. SECURITATE
+
+* criptare date
+* GDPR compliance
+* anti-spam
+* validare utilizatori reali
+
+---
+
+## 14. KPI-uri
+
+* DAU > 60%
+* retenție 7 zile > 40%
+* engagement zilnic ridicat
+* % sesizări rezolvate
+
+---
+
+## 15. VIZIUNE FINALĂ
+
+Aplicația trebuie să devină:
+
+* indispensabilă
+* utilizată zilnic
+* canal principal de comunicare
+* platformă de încredere
+
+---
+
+## 16. STRATEGIE DE LANSARE (CRITIC)
+
+* lansare oficială în comună
+* implicare primărie
+* onboarding asistat fizic
+* promovare locală
+* beneficii EXCLUSIVE în app
+
+---
+
+## 17. PRINCIPIU CHEIE
+
+Nu construi o aplicație.
+Construiește un sistem fără de care cetățenii nu mai pot funcționa eficient.

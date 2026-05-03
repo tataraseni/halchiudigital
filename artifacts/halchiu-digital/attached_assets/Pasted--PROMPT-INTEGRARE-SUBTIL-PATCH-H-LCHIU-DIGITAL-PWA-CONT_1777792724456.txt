@@ -1,0 +1,151 @@
+# PROMPT – INTEGRARE SUBTILĂ (PATCH) „HĂLCHIU DIGITAL PWA”
+
+## CONTEXT
+
+Acest prompt NU rescrie aplicația existentă „Hălchiu Digital”.
+
+Acesta este un **layer de optimizare incrementală**, care:
+
+* păstrează structura actuală
+* nu schimbă fluxurile existente
+* adaugă doar îmbunătățiri UX/PWA și micro-funcții
+
+---
+
+## 1. REGULĂ PRINCIPALĂ (CRITIC)
+
+NU modifica:
+
+* structura ecranelor existente
+* navigația principală
+* funcțiile deja implementate
+
+DOAR:
+
+* îmbunătățește UX
+* adaugă micro-interacțiuni
+* optimizează PWA behavior
+* crește retenția subtil
+
+---
+
+## 2. ÎMBUNĂTĂȚIRI PWA (NON-INTRUSIVE)
+
+Adaugă fără schimbare de UI:
+
+### 2.1 Service Worker Enhancement
+
+* cache inteligent pentru:
+
+  * feed
+  * evenimente
+  * anunțuri recente
+* refresh automat în background
+
+---
+
+### 2.2 Offline UX
+
+Dacă utilizatorul e offline:
+
+* afișează banner discret:
+  „Ești offline – conținutul cache este disponibil”
+* NU bloca aplicația
+
+---
+
+### 2.3 Install Prompt (subtil)
+
+* afișează o singură dată:
+  „Adaugă Hălchiu Digital pe ecranul principal”
+* doar după 2–3 utilizări
+
+---
+
+## 3. MICRO-INTERACȚIUNI (FĂRĂ SCHIMBARE DE STRUCTURĂ)
+
+Adaugă doar comportament:
+
+* tap feedback (toast mic)
+* loading skeleton pe carduri existente
+* animații fade-in la feed
+* vibrație ușoară la acțiuni importante (raportare / submit)
+
+---
+
+## 4. OPTIMIZARE FEED (FĂRĂ SCHIMBARE UI)
+
+Fără redesign.
+
+Doar logică:
+
+* prioritizează:
+
+  * anunțuri oficiale
+  * evenimente active
+  * sesizări locale recente
+
+* scade:
+
+  * postări vechi
+  * conținut irelevant
+
+---
+
+## 5. NOTIFICĂRI (ÎMBUNĂTĂȚIRE INVIZIBILĂ)
+
+Fără schimbare de ecran:
+
+* optimizează Web Push:
+
+  * grupare notificări (batching)
+  * evită spam
+  * prioritizează urgențele
+
+---
+
+## 6. QUICK UX BOOST (FOARTE IMPORTANT)
+
+Adaugă fără UI nou:
+
+* „recent activity hint” în Home:
+
+  * exemplu: „3 sesizări noi în zona ta”
+
+* micro-rezumat feed:
+
+  * „Astăzi: 2 evenimente, 1 alertă, 5 postări noi”
+
+---
+
+## 7. PERFORMANCE PATCH (CRITIC PENTRU PWA)
+
+Fără schimbare vizibilă:
+
+* lazy load imagini
+* pagination pe feed
+* prefetch pentru următoarea pagină
+* reduce bundle inutil
+
+---
+
+## 8. ENGAGEMENT SUBTIL (FĂRĂ GAMIFICATION NOU)
+
+NU adăuga sistem nou.
+
+Doar:
+
+* highlight „activitate recentă”
+* mici badge-uri existente evidențiate mai clar
+* feedback instant după acțiuni
+
+---
+
+## 9. PRINCIPIU FINAL
+
+Această integrare trebuie să fie:
+
+* invizibilă ca schimbare
+* vizibilă ca îmbunătățire
+* zero fricțiune pentru utilizator
+* 100% compatibilă cu structura existentă

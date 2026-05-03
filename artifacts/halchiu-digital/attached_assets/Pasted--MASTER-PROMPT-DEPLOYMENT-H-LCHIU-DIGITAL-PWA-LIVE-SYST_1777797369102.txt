@@ -1,0 +1,160 @@
+# MASTER PROMPT – DEPLOYMENT „HĂLCHIU DIGITAL” (PWA LIVE SYSTEM)
+
+Construiește și deployează aplicația **„Hălchiu Digital”** ca PWA full-stack funcțional.
+
+⚠️ REGULĂ ABSOLUTĂ:
+NU modifica, NU rescrie, NU refactoriza nimic din ceea ce este deja implementat și funcțional.
+DOAR conectează, configurează și deployează incremental (zero breaking changes).
+
+---
+
+# 1. ARHITECTURĂ FINALĂ
+
+Frontend (PWA Next.js)
+↓
+Backend API (Node.js / Express)
+↓
+Database (PostgreSQL)
+
+---
+
+# 2. TEHNOLOGII DEPLOY
+
+* Frontend: Vercel
+* Backend: Railway / Render
+* Database: Supabase / Neon Postgres
+
+---
+
+# 3. FRONTEND DEPLOY (PWA)
+
+### Pași:
+
+* npm install
+* npm run build
+* deploy pe Vercel
+
+### PWA OBLIGATORIU:
+
+* manifest.json în /public
+* service worker activ
+* install prompt (Add to Home Screen)
+* offline fallback page
+* lazy loading activ
+
+---
+
+# 4. BACKEND DEPLOY
+
+### Structură:
+
+* Express.js server simplu
+* routes: feed, reports, events, business, services
+
+### Deploy:
+
+* push GitHub
+* connect Railway / Render
+* auto deploy activ
+
+---
+
+# 5. DATABASE SETUP
+
+PostgreSQL (Supabase / Neon)
+
+Tabele minime:
+
+* users
+* reports
+* events
+* business
+* services
+
+Toate includ:
+
+* tenant_id (pentru multi-comună)
+
+---
+
+# 6. CONECTARE FRONTEND ↔ BACKEND
+
+* configurează NEXT_PUBLIC_API_URL
+* API calls prin fetch wrapper
+* fără modificări structurale în UI existent
+
+---
+
+# 7. PWA FINAL CHECK
+
+Verifică:
+
+* manifest încărcat
+* service worker activ
+* install prompt funcțional
+* offline fallback prezent
+* UI funcționează din home screen
+
+---
+
+# 8. TESTARE MOBILE
+
+Obligatoriu:
+
+* deschidere pe telefon
+* instalare ca app
+* rulare standalone (fără browser bar)
+* funcționare feed + sesizări
+
+---
+
+# 9. DEPLOY FLOW OBLIGATORIU (ORDINE FIXĂ)
+
+1. Deploy backend (Railway / Render)
+2. Deploy database (Supabase / Neon)
+3. Deploy frontend (Vercel)
+4. Configure env vars
+5. Test PWA pe mobil
+
+---
+
+# 10. ENV CONFIG
+
+Frontend:
+
+* NEXT_PUBLIC_API_URL
+
+Backend:
+
+* DATABASE_URL
+* PORT
+
+---
+
+# 11. CE NU TREBUIE FĂCUT
+
+❌ NU refactoriza cod existent
+❌ NU schimba UI/UX existent
+❌ NU adăuga feature-uri noi în acest pas
+❌ NU optimiza excesiv
+
+---
+
+# 12. DEFINIȚIE DE SUCCES
+
+Deploy-ul este considerat reușit dacă:
+
+* aplicația este live public
+* se deschide pe mobil
+* poate fi instalată ca PWA
+* funcționează feed + sesizări + evenimente
+* backend răspunde corect API
+
+---
+
+# PRINCIPIU FINAL
+
+Acest proces este strict de:
+👉 conectare + deploy + validare
+
+NU de dezvoltare nouă.

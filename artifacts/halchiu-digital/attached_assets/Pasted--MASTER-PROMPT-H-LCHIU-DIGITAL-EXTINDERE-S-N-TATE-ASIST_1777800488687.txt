@@ -1,0 +1,215 @@
+# MASTER PROMPT – „HĂLCHIU DIGITAL” (EXTINDERE: SĂNĂTATE + ASISTENȚĂ SOCIALĂ + ALERTĂ PUBLICĂ)
+
+Extinde aplicația **„Hălchiu Digital” (PWA full-stack existent)** prin adăugarea unor module de sănătate publică și asistență socială.
+
+⚠️ REGULĂ CRITICĂ:
+NU modifica, NU șterge și NU rescrie nimic din funcționalitățile existente.
+Toate cerințele sunt implementate DOAR ca extensii modulare compatibile (non-breaking).
+
+---
+
+# 1. MODUL NOU: SĂNĂTATE LOCALĂ (HEALTH HUB)
+
+Creează o secțiune dedicată „Sănătate Locală” ca hub informativ și operațional.
+
+## 1.1 CAMPANII MEDICALE
+
+Funcționalități:
+
+* campanii de vaccinare (ex: antigripal, copii)
+* campanii obligatorii de imunizare
+* campanii de prevenție locale
+
+Afișare:
+
+* tip campanie
+* grup țintă
+* perioadă
+* locație (dispensar / caravană / clinică)
+* status activ/inactiv
+
+---
+
+## 1.2 SCREENING & PREVENȚIE
+
+Funcționalități:
+
+* anunțuri caravane medicale mobile
+* analize gratuite sau subvenționate
+* screening (diabet, tensiune, oncologic etc.)
+
+Integrare:
+
+* afișare în feed local
+* notificări relevante doar localizate geografic
+
+---
+
+## 1.3 ALERTĂ DE SĂNĂTATE PUBLICĂ
+
+Tipuri de alerte:
+
+* caniculă / frig extrem
+* epidemii / gripă sezonieră
+* calitatea apei
+* avertizări sanitare locale
+
+Reguli:
+
+* doar admin/autoritate medicală poate publica
+* prioritizare ridicată în feed și notificări
+
+---
+
+## 1.4 PROFIL MEDIC (DIRECTOR MEDICAL LOCAL)
+
+Pentru fiecare medic de familie:
+
+Date:
+
+* nume
+* specializare
+* cabinet / dispensar
+* program consultații
+* status (activ / concediu)
+* înlocuitor (dacă există)
+* contact
+
+Funcționalități:
+
+* program actualizat
+* afișare concedii
+* redirecționare către înlocuitor
+
+---
+
+## 1.5 PROGRAMĂRI ONLINE
+
+Funcționalitate critică:
+
+* buton „Programează consultație”
+* sloturi disponibile (simplu sau request-based)
+* reducerea apelurilor telefonice către medici
+
+Regulă:
+
+* NU interferează cu sistemele existente
+* este doar layer opțional de interacțiune
+
+---
+
+# 2. MODUL NOU: ASISTENȚĂ SOCIALĂ
+
+## 2.1 INFORMAȚII ȘI AJUTOARE
+
+Funcționalități:
+
+* ajutor de încălzire
+* cote de lemne
+* sprijin social sezonier
+* formulare și informări
+
+Afișare:
+
+* anunțuri oficiale primărie
+* ghiduri de eligibilitate
+* perioade de aplicare
+
+---
+
+## 2.2 TRANSPARENȚĂ SOCIALĂ
+
+* status cereri (dacă sunt integrate ulterior)
+* informare despre programe active
+* notificări locale relevante
+
+---
+
+# 3. INTEGRARE ÎN SISTEMUL EXISTENT
+
+## FEED
+
+Toate noile module apar în feed ca:
+
+* Health Alert
+* Social Notice
+* Medical Campaign
+
+Fără a modifica structura feed existentă.
+
+---
+
+## NOTIFICĂRI
+
+Reguli:
+
+* max 1–2 notificări/zi
+* doar evenimente relevante local
+* prioritate mare pentru sănătate publică
+
+---
+
+## SERVICII LOCALE (EXTINS)
+
+Se extinde modul existent cu:
+
+* medici de familie (profil complet)
+* dispensar
+* clinici partenere
+* centre de analize
+
+---
+
+# 4. GOVERNANȚĂ (FOARTE IMPORTANT)
+
+## PUBLICARE SĂNĂTATE:
+
+Doar roluri autorizate:
+
+* primărie
+* dispensar / autoritate medicală
+
+---
+
+## VALIDARE CONȚINUT:
+
+* alerte medicale = obligatoriu aprobate
+* campanii = programate
+* anunțuri sociale = moderate
+
+---
+
+# 5. PRINCIPIU DE PRODUS
+
+Aplicația devine:
+
+* infrastructură digitală locală
+* hub de sănătate publică locală
+* sistem de informare preventivă
+* platformă de reducere a presiunii pe medici
+
+---
+
+# 6. EFECT STRATEGIC
+
+Această extensie creează:
+
+* reducerea apelurilor către medici
+* creșterea prevenției medicale
+* informare rapidă în situații de risc
+* încredere instituțională în platformă
+
+---
+
+# 7. REGULĂ FINALĂ
+
+NU se modifică sistemul existent.
+
+DOAR se adaugă module noi peste:
+
+* feed
+* servicii
+* notificări
+* admin
+
+Fără breaking changes, fără refactorizare.

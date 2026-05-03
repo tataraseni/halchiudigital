@@ -1,0 +1,199 @@
+# PWA DEPLOY DEBUG CHECKLIST – „HĂLCHIU DIGITAL” (PROD SAFE)
+
+Verifică și depanează aplicația **PWA full-stack** după deploy.
+
+⚠️ REGULĂ ABSOLUTĂ:
+NU modifica funcționalități existente și NU rescrie codul.
+DOAR identifică și corectează probleme de configurare, deploy, mediu și integrare.
+
+---
+
+# 1. PWA NU SE INSTALEAZĂ
+
+Verifică:
+
+* manifest.json există în `/public`
+* display = "standalone"
+* start_url = "/"
+* icons 192x192 + 512x512 valide
+* aplicația rulează pe HTTPS (obligatoriu)
+
+Debug:
+
+* DevTools → Application → Manifest
+
+---
+
+# 2. SERVICE WORKER NU FUNCȚIONEAZĂ
+
+Verifică:
+
+* sw.js există în `/public`
+* este înregistrat în frontend
+* este activ în DevTools
+
+Cod check:
+
+```js
+navigator.serviceWorker.register('/sw.js')
+```
+
+Debug:
+
+* DevTools → Application → Service Workers (ACTIVE)
+
+---
+
+# 3. API NU RĂSPUNDE
+
+Verifică:
+
+* NEXT_PUBLIC_API_URL corect
+* backend pornit și accesibil public
+
+Debug:
+
+* accesează API direct în browser
+
+---
+
+# 4. CORS ERROR
+
+Simptome:
+
+* blocked by CORS policy
+
+Fix backend:
+
+```js
+app.use(cors({
+  origin: "*"
+}))
+```
+
+---
+
+# 5. ENV VARS NU FUNCȚIONEAZĂ
+
+Verifică:
+
+* prefix NEXT_PUBLIC_ (frontend)
+* redeploy după modificare
+
+Debug:
+
+* console.log(API_URL)
+
+---
+
+# 6. PWA NU APARE PE MOBIL
+
+Verifică:
+
+* HTTPS activ
+* manifest accesibil public
+* cache curățat pe mobil
+
+Debug:
+
+* test incognito mobil
+
+---
+
+# 7. FEED NU SE ACTUALIZEAZĂ
+
+Verifică:
+
+* cache service worker
+
+Fix:
+
+```js
+cache: "no-store"
+```
+
+---
+
+# 8. IMAGINI NU SE ÎNCARCĂ
+
+Verifică:
+
+* URL absolut corect
+* storage extern dacă e necesar
+
+---
+
+# 9. LOGIN NU PERSISTĂ
+
+Verifică:
+
+* localStorage / cookie storage
+
+Fix:
+
+```js
+localStorage.setItem("token", token)
+```
+
+---
+
+# 10. BACKEND CRASH DUPĂ DEPLOY
+
+Verifică:
+
+* PORT corect
+* binding server
+
+Fix:
+
+```js
+app.listen(process.env.PORT || 3000, "0.0.0.0")
+```
+
+---
+
+# 11. DATABASE NU CONECTEAZĂ
+
+Verifică:
+
+* DATABASE_URL corect
+* acces public permis
+
+---
+
+# 12. UI STRICAT ÎN PRODUCȚIE
+
+Verifică:
+
+* build complet
+* Tailwind content paths corecte
+
+Fix:
+
+```bash
+npm run build
+```
+
+---
+
+# 13. ORDINE DE DEBUG (OBLIGATORIU)
+
+1. Console errors
+2. Network tab
+3. Env vars
+4. Backend logs
+5. Service worker
+6. Database connection
+
+---
+
+# PRINCIPIU FINAL
+
+NU modifica logică de business.
+
+DOAR corectează:
+
+* configurare
+* deploy
+* mediu
+* integrare
