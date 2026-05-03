@@ -115,10 +115,15 @@ export interface IStorage {
   getAllPushSubscriptions(): Promise<PushSubscription[]>;
   // Marketplace
   getMarketplaceItems(): Promise<MarketplaceItem[]>;
+  getAllMarketplaceItems(): Promise<MarketplaceItem[]>;
+  getPendingMarketplaceItems(): Promise<MarketplaceItem[]>;
   getMarketplaceItemById(id: number): Promise<MarketplaceItem | undefined>;
   createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem>;
   updateMarketplaceItem(id: number, data: Partial<MarketplaceItem>): Promise<MarketplaceItem | undefined>;
   deleteMarketplaceItem(id: number): Promise<void>;
+  approveMarketplaceItem(id: number): Promise<MarketplaceItem | undefined>;
+  rejectMarketplaceItem(id: number): Promise<MarketplaceItem | undefined>;
+  deleteExpiredMarketplaceItems(): Promise<void>;
   // Announcements
   getAnnouncements(): Promise<Announcement[]>;
   getAnnouncementById(id: number): Promise<Announcement | undefined>;
@@ -127,10 +132,15 @@ export interface IStorage {
   deleteAnnouncement(id: number): Promise<void>;
   // Job Listings
   getJobListings(): Promise<JobListing[]>;
+  getAllJobListings(): Promise<JobListing[]>;
+  getPendingJobListings(): Promise<JobListing[]>;
   getJobListingById(id: number): Promise<JobListing | undefined>;
   createJobListing(job: InsertJobListing): Promise<JobListing>;
   updateJobListing(id: number, data: Partial<JobListing>): Promise<JobListing | undefined>;
   deleteJobListing(id: number): Promise<void>;
+  approveJobListing(id: number): Promise<JobListing | undefined>;
+  rejectJobListing(id: number): Promise<JobListing | undefined>;
+  deleteExpiredJobListings(): Promise<void>;
   // Health Campaigns
   getHealthCampaigns(): Promise<HealthCampaign[]>;
   getHealthCampaignById(id: number): Promise<HealthCampaign | undefined>;
@@ -170,6 +180,7 @@ export interface IStorage {
   // Chat
   getChatMessages(channel: string, limit?: number): Promise<ChatMessage[]>;
   createChatMessage(msg: InsertChatMessage): Promise<ChatMessage>;
+  deleteOldChatChannels(): Promise<void>;
   // Weather
   getWeatherCache(location: string): Promise<WeatherCache | undefined>;
   upsertWeatherCache(data: InsertWeatherCache): Promise<WeatherCache>;
@@ -377,6 +388,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(marketplaceItems.status, "active"))
       .orderBy(sql`${marketplaceItems.createdAt} DESC`);
   }
+  async getAllMarketplaceItems() {
+    return db.select().from(marketplaceItems)
+      .orderBy(sql`${marketplaceItems.status} ASC`, sql`${marketplaceItems.createdAt} DESC`);
+  }
+  async getPendingMarketplaceItems() {
+    return db.select().from(marketplaceItems)
+      .where(eq(marketplaceItems.status, "pending"))
+      .orderBy(sql`${marketplaceItems.createdAt} DESC`);
+  }
   async getMarketplaceItemById(id: number) {
     const [m] = await db.select().from(marketplaceItems).where(eq(marketplaceItems.id, id));
     return m;
@@ -390,6 +410,19 @@ export class DatabaseStorage implements IStorage {
     return m;
   }
   async deleteMarketplaceItem(id: number) { await db.delete(marketplaceItems).where(eq(marketplaceItems.id, id)); }
+  async approveMarketplaceItem(id: number) {
+    const [m] = await db.update(marketplaceItems).set({ status: "active" }).where(eq(marketplaceItems.id, id)).returning();
+    return m;
+  }
+  async rejectMarketplaceItem(id: number) {
+    const [m] = await db.update(marketplaceItems).set({ status: "rejected" }).where(eq(marketplaceItems.id, id)).returning();
+    return m;
+  }
+  async deleteExpiredMarketplaceItems() {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db.delete(marketplaceItems)
+      .where(sql`${marketplaceItems.expiresAt} IS NOT NULL AND ${marketplaceItems.expiresAt} < ${cutoff}`);
+  }
 
   // ---- ANNOUNCEMENTS ----
   async getAnnouncements() {
@@ -417,6 +450,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobListings.status, "active"))
       .orderBy(sql`${jobListings.createdAt} DESC`);
   }
+  async getAllJobListings() {
+    return db.select().from(jobListings)
+      .orderBy(sql`${jobListings.status} ASC`, sql`${jobListings.createdAt} DESC`);
+  }
+  async getPendingJobListings() {
+    return db.select().from(jobListings)
+      .where(eq(jobListings.status, "pending"))
+      .orderBy(sql`${jobListings.createdAt} DESC`);
+  }
   async getJobListingById(id: number) {
     const [j] = await db.select().from(jobListings).where(eq(jobListings.id, id));
     return j;
@@ -430,6 +472,19 @@ export class DatabaseStorage implements IStorage {
     return j;
   }
   async deleteJobListing(id: number) { await db.delete(jobListings).where(eq(jobListings.id, id)); }
+  async approveJobListing(id: number) {
+    const [j] = await db.update(jobListings).set({ status: "active" }).where(eq(jobListings.id, id)).returning();
+    return j;
+  }
+  async rejectJobListing(id: number) {
+    const [j] = await db.update(jobListings).set({ status: "rejected" }).where(eq(jobListings.id, id)).returning();
+    return j;
+  }
+  async deleteExpiredJobListings() {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db.delete(jobListings)
+      .where(sql`${jobListings.expiresAt} IS NOT NULL AND ${jobListings.expiresAt} < ${cutoff}`);
+  }
 
   // ---- HEALTH CAMPAIGNS ----
   async getHealthCampaigns() {
@@ -571,6 +626,18 @@ export class DatabaseStorage implements IStorage {
   async createChatMessage(msg: InsertChatMessage) {
     const [created] = await db.insert(chatMessages).values(msg).returning();
     return created;
+  }
+  async deleteOldChatChannels() {
+    // Delete all messages from channels whose FIRST message is older than 24h
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db.execute(sql`
+      DELETE FROM chat_messages
+      WHERE channel IN (
+        SELECT channel FROM chat_messages
+        GROUP BY channel
+        HAVING MIN(created_at) < ${cutoff}
+      )
+    `);
   }
 
   // ---- WEATHER ----

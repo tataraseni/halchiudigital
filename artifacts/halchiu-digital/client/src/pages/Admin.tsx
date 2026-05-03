@@ -1692,14 +1692,19 @@ function ComunicareTab() {
 
   const deleteMarket = useMutation({ mutationFn:(id:number)=>api("DELETE",`/api/marketplace/${id}`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/marketplace"]});qc.invalidateQueries({queryKey:["/api/marketplace"]});toast({title:"Anunț șters"});} });
   const updateMarket = useMutation({ mutationFn:({id,data}:{id:number;data:any})=>api("PUT",`/api/marketplace/${id}`,data), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/marketplace"]});qc.invalidateQueries({queryKey:["/api/marketplace"]});} });
+  const approveMarket = useMutation({ mutationFn:(id:number)=>api("POST",`/api/marketplace/${id}/approve`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/marketplace"]});qc.invalidateQueries({queryKey:["/api/marketplace"]});toast({title:"Anunț aprobat ✓"});} });
+  const rejectMarket = useMutation({ mutationFn:(id:number)=>api("POST",`/api/marketplace/${id}/reject`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/marketplace"]});qc.invalidateQueries({queryKey:["/api/marketplace"]});toast({title:"Anunț respins"});} });
   const deleteJob = useMutation({ mutationFn:(id:number)=>api("DELETE",`/api/jobs/${id}`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/jobs"]});qc.invalidateQueries({queryKey:["/api/jobs"]});toast({title:"Job șters"});} });
   const updateJob = useMutation({ mutationFn:({id,data}:{id:number;data:any})=>api("PUT",`/api/jobs/${id}`,data), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/jobs"]});qc.invalidateQueries({queryKey:["/api/jobs"]});} });
+  const approveJob = useMutation({ mutationFn:(id:number)=>api("POST",`/api/jobs/${id}/approve`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/jobs"]});qc.invalidateQueries({queryKey:["/api/jobs"]});toast({title:"Job aprobat ✓"});} });
+  const rejectJob = useMutation({ mutationFn:(id:number)=>api("POST",`/api/jobs/${id}/reject`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/jobs"]});qc.invalidateQueries({queryKey:["/api/jobs"]});toast({title:"Job respins"});} });
   const deleteAnn = useMutation({ mutationFn:(id:number)=>api("DELETE",`/api/announcements/${id}`), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/announcements"]});qc.invalidateQueries({queryKey:["/api/announcements"]});toast({title:"Anunț șters"});} });
   const updateAnn = useMutation({ mutationFn:({id,data}:{id:number;data:any})=>api("PUT",`/api/announcements/${id}`,data), onSuccess:()=>{qc.invalidateQueries({queryKey:["/api/admin/announcements"]});qc.invalidateQueries({queryKey:["/api/announcements"]});} });
 
   const ITEM_STATUS_CLASSES: Record<string, string> = {
     active:"bg-green-100 text-green-700 border-green-200", sold:"bg-blue-100 text-blue-700 border-blue-200", inactive:"bg-muted text-muted-foreground border-border",
     filled:"bg-blue-100 text-blue-700 border-blue-200", expired:"bg-muted text-muted-foreground border-border",
+    pending:"bg-amber-100 text-amber-700 border-amber-200", rejected:"bg-red-100 text-red-700 border-red-200",
   };
 
   const TAB_DESCRIPTIONS: Record<ComSubTab, { icon: typeof ShoppingBag; desc: string }> = {
@@ -1751,7 +1756,15 @@ function ComunicareTab() {
         <div className="space-y-2">
           {mLoading && <Skeleton className="h-24 rounded-xl"/>}
           {marketplace?.map(item => (
-            <div key={item.id} className="bg-card border border-card-border rounded-xl p-4">
+            <div key={item.id} className={`bg-card border rounded-xl p-4 ${item.status === "pending" ? "border-amber-300 dark:border-amber-700" : "border-card-border"}`}>
+              {item.status === "pending" && (
+                <div className="flex items-center gap-2 mb-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex-1">Necesită aprobare</span>
+                  <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-green-700 hover:text-green-800 hover:bg-green-50" onClick={()=>approveMarket.mutate(item.id)} disabled={approveMarket.isPending}><ThumbsUp className="w-3 h-3"/>Aprobă</Button>
+                  <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-red-700 hover:text-red-800 hover:bg-red-50" onClick={()=>rejectMarket.mutate(item.id)} disabled={rejectMarket.isPending}><ThumbsDown className="w-3 h-3"/>Respinge</Button>
+                </div>
+              )}
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{item.category}</span>
@@ -1784,7 +1797,15 @@ function ComunicareTab() {
         <div className="space-y-2">
           {jLoading && <Skeleton className="h-24 rounded-xl"/>}
           {jobs?.map(job => (
-            <div key={job.id} className="bg-card border border-card-border rounded-xl p-4">
+            <div key={job.id} className={`bg-card border rounded-xl p-4 ${job.status === "pending" ? "border-amber-300 dark:border-amber-700" : "border-card-border"}`}>
+              {job.status === "pending" && (
+                <div className="flex items-center gap-2 mb-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex-1">Necesită aprobare</span>
+                  <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-green-700 hover:text-green-800 hover:bg-green-50" onClick={()=>approveJob.mutate(job.id)} disabled={approveJob.isPending}><ThumbsUp className="w-3 h-3"/>Aprobă</Button>
+                  <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-red-700 hover:text-red-800 hover:bg-red-50" onClick={()=>rejectJob.mutate(job.id)} disabled={rejectJob.isPending}><ThumbsDown className="w-3 h-3"/>Respinge</Button>
+                </div>
+              )}
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{job.type}</span>

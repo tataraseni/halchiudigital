@@ -67,15 +67,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       ALTER TABLE events ALTER COLUMN status SET DEFAULT 'approved';
       ALTER TABLE businesses ADD COLUMN IF NOT EXISTS user_id INTEGER;
       ALTER TABLE businesses ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved';
+      ALTER TABLE marketplace_items ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+      ALTER TABLE job_listings ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
     `);
   } catch (_) {}
 
-  // ─── CLEANUP JOB: delete posts 24h after expiry ───────────────────────────
+  // ─── CLEANUP JOBS ────────────────────────────────────────────────────────
   const runCleanup = async () => {
     try { await storage.deleteExpiredPosts(); } catch (_) {}
+    try { await storage.deleteExpiredMarketplaceItems(); } catch (_) {}
+    try { await storage.deleteExpiredJobListings(); } catch (_) {}
+    try { await storage.deleteOldChatChannels(); } catch (_) {}
   };
   runCleanup();
-  setInterval(runCleanup, 24 * 60 * 60 * 1000);
+  setInterval(runCleanup, 60 * 60 * 1000); // run hourly
 
   // ─── VAPID init ───────────────────────────────────────────────────────────
   const vapidPublicKey = await initVapid();
@@ -310,11 +315,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json([...pending, ...approved]);
   });
 
+  // ─── Event auto-image helper ──────────────────────────────────────────────
+  function getEventAutoImage(category: string, title: string): string {
+    const catMap: Record<string, string> = {
+      cultural: "concert,festival,art,performance",
+      voluntariat: "volunteer,community,nature,environment",
+      sport: "sport,competition,fitness,athletic",
+      general: "community,meeting,town,village",
+    };
+    const keywords = catMap[category] ?? "community,village,event";
+    const seed = encodeURIComponent((title + category).slice(0, 20));
+    return `https://picsum.photos/seed/${seed}/800/450`;
+  }
+
   app.post("/api/events", requireAuth, async (req, res) => {
     try {
       const role = req.session.userRole as Role;
       if (!permissions.canCreateEvents(role)) return res.status(403).json({ message: "Acces interzis" });
       const input = insertEventSchema.parse(req.body);
+      // Auto-generate image if none provided
+      if (!input.imageUrl && input.title) {
+        (input as any).imageUrl = getEventAutoImage(input.category ?? "general", input.title);
+      }
       const isAdmin = permissions.canManageEvents(role);
       const status = isAdmin ? "approved" : "pending";
       const event = await storage.createEventWithStatus({ ...input, userId: req.session.userId } as any, status);
@@ -663,16 +685,57 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const item = await storage.createMarketplaceItem({
         ...input,
         userId: req.session.userId ?? null,
-      });
+        status: "pending",
+      } as any);
       if (req.session.userId) {
         await storage.addPoints(req.session.userId, 3);
         checkAndAwardBadges(req.session.userId, "marketplace").catch(() => {});
+        const n = await storage.createNotification({
+          userId: req.session.userId,
+          type: "info",
+          category: "comunitate",
+          title: "Anunț trimis spre aprobare!",
+          message: `„${item.title}" a fost trimis și va fi aprobat în curând.`,
+        });
+        sendPushForNotif(n).catch(() => {});
       }
       res.status(201).json(item);
     } catch (err) {
       if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
       throw err;
     }
+  });
+
+  app.post("/api/marketplace/:id/approve", requireRole("administrator", "primar", "viceprimar", "moderator"), async (req, res) => {
+    const item = await storage.approveMarketplaceItem(Number(req.params.id));
+    if (!item) return res.status(404).json({ message: "Anunțul nu există" });
+    if ((item as any).userId) {
+      const n = await storage.createNotification({
+        userId: (item as any).userId,
+        type: "success",
+        category: "comunitate",
+        title: "Anunț aprobat! ✓",
+        message: `„${item.title}" este acum vizibil în marketplace.`,
+      });
+      sendPushForNotif(n).catch(() => {});
+    }
+    res.json(item);
+  });
+
+  app.post("/api/marketplace/:id/reject", requireRole("administrator", "primar", "viceprimar", "moderator"), async (req, res) => {
+    const item = await storage.rejectMarketplaceItem(Number(req.params.id));
+    if (!item) return res.status(404).json({ message: "Anunțul nu există" });
+    if ((item as any).userId) {
+      const n = await storage.createNotification({
+        userId: (item as any).userId,
+        type: "info",
+        category: "comunitate",
+        title: "Anunț respins",
+        message: `„${item.title}" nu a putut fi aprobat. Contactați administrația pentru detalii.`,
+      });
+      sendPushForNotif(n).catch(() => {});
+    }
+    res.json(item);
   });
 
   app.put("/api/marketplace/:id", requireAuth, async (req, res) => {
@@ -731,16 +794,57 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const job = await storage.createJobListing({
         ...input,
         userId: req.session.userId ?? null,
-      });
+        status: "pending",
+      } as any);
       if (req.session.userId) {
         await storage.addPoints(req.session.userId, 5);
         checkAndAwardBadges(req.session.userId, "job").catch(() => {});
+        const n = await storage.createNotification({
+          userId: req.session.userId,
+          type: "info",
+          category: "comunitate",
+          title: "Job trimis spre aprobare!",
+          message: `„${job.title}" a fost trimis și va fi aprobat în curând.`,
+        });
+        sendPushForNotif(n).catch(() => {});
       }
       res.status(201).json(job);
     } catch (err) {
       if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
       throw err;
     }
+  });
+
+  app.post("/api/jobs/:id/approve", requireRole("administrator", "primar", "viceprimar", "moderator"), async (req, res) => {
+    const job = await storage.approveJobListing(Number(req.params.id));
+    if (!job) return res.status(404).json({ message: "Jobul nu există" });
+    if ((job as any).userId) {
+      const n = await storage.createNotification({
+        userId: (job as any).userId,
+        type: "success",
+        category: "comunitate",
+        title: "Job aprobat! ✓",
+        message: `„${job.title}" la ${job.company} este acum vizibil în secțiunea Joburi.`,
+      });
+      sendPushForNotif(n).catch(() => {});
+    }
+    res.json(job);
+  });
+
+  app.post("/api/jobs/:id/reject", requireRole("administrator", "primar", "viceprimar", "moderator"), async (req, res) => {
+    const job = await storage.rejectJobListing(Number(req.params.id));
+    if (!job) return res.status(404).json({ message: "Jobul nu există" });
+    if ((job as any).userId) {
+      const n = await storage.createNotification({
+        userId: (job as any).userId,
+        type: "info",
+        category: "comunitate",
+        title: "Job respins",
+        message: `„${job.title}" nu a putut fi aprobat. Contactați administrația pentru detalii.`,
+      });
+      sendPushForNotif(n).catch(() => {});
+    }
+    res.json(job);
   });
 
   app.put("/api/jobs/:id", requireAuth, async (req, res) => {
@@ -787,16 +891,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ─── ADMIN CONTENT LISTS ─────────────────────────────────────────────────
-  app.get("/api/admin/marketplace", requireRole("administrator", "primar", "viceprimar"), async (_req, res) => {
-    res.json(await storage.getMarketplaceItems());
+  app.get("/api/admin/marketplace", requireRole("administrator", "primar", "viceprimar", "moderator"), async (_req, res) => {
+    res.json(await storage.getAllMarketplaceItems());
   });
 
   app.get("/api/admin/announcements", requireRole("administrator", "primar", "viceprimar", "moderator"), async (_req, res) => {
     res.json(await storage.getAnnouncements());
   });
 
-  app.get("/api/admin/jobs", requireRole("administrator", "primar", "viceprimar"), async (_req, res) => {
-    res.json(await storage.getJobListings());
+  app.get("/api/admin/jobs", requireRole("administrator", "primar", "viceprimar", "moderator"), async (_req, res) => {
+    res.json(await storage.getAllJobListings());
   });
 
   // ─── ADMIN BROADCAST NOTIFICATION ────────────────────────────────────────
@@ -1349,14 +1453,17 @@ async function seedDatabase() {
     ]);
   }
 
-  // Seed marketplace
+  // Seed marketplace (admin-seeded items are pre-approved as "active")
   if (existingMarketplace.length === 0) {
+    const { db: dbInst } = await import("./db");
     await Promise.all([
       storage.createMarketplaceItem({ title: "Miere naturală de salcâm – 1kg", description: "Miere pură de salcâm din stupina proprie. Fără aditivi. Disponibil în borcane de 1kg.", category: "produse", price: "35 RON/kg", contact: "0722 111 222", imageUrl: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&q=80", userId: null }),
       storage.createMarketplaceItem({ title: "Legume proaspete din grădina mea", description: "Tomate, castraveți, ardei, dovlecel – recoltate zilnic. Fără pesticide.", category: "produse", price: "Negociabil", contact: "0733 444 555", imageUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80", userId: null }),
       storage.createMarketplaceItem({ title: "Servicii de grădinărit", description: "Tuns gazon, aranjat grădini, plantat copaci. Tarif orar sau per proiect.", category: "servicii", price: "50 RON/oră", contact: "0744 777 888", imageUrl: null, userId: null }),
       storage.createMarketplaceItem({ title: "Ouă de țară – găini crescute liber", description: "Ouă proaspete, disponibile zilnic. Minimum 10 bucăți per comandă.", category: "produse", price: "1.5 RON/buc", contact: "0755 666 999", imageUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&q=80", userId: null }),
     ]);
+    // Mark seeded items as active (bypassing user moderation flow)
+    await dbInst.execute(`UPDATE marketplace_items SET status = 'active' WHERE user_id IS NULL`);
   }
 
   // Seed announcements
@@ -1369,13 +1476,15 @@ async function seedDatabase() {
     ]);
   }
 
-  // Seed jobs
+  // Seed jobs (admin-seeded items are pre-approved as "active")
   if (existingJobs.length === 0) {
+    const { db: dbInst2 } = await import("./db");
     await Promise.all([
       storage.createJobListing({ company: "Atelier Auto Ionescu", title: "Mecanic Auto", description: "Căutăm mecanic auto cu experiență de minim 3 ani. Se oferă salariu atractiv și program fix.", type: "full_time", contact: "0733 456 789", userId: null }),
       storage.createJobListing({ company: "Ferma Văcaru", title: "Muncitor agricol sezonier", description: "Angajăm pentru sezonul de vară. Lucrări agricole generale. Cazare asigurată.", type: "sezonier", contact: "0755 321 987", userId: null }),
       storage.createJobListing({ company: "Pensiunea Casa Hălchiului", title: "Cameristă / Operator recepție", description: "Angajăm pentru sezonul turistic. Experiența nu este obligatorie – se oferă training.", type: "part_time", contact: "0744 987 654", userId: null }),
     ]);
+    await dbInst2.execute(`UPDATE job_listings SET status = 'active' WHERE user_id IS NULL`);
   }
 
   // ─── USER BADGES MIGRATION ───────────────────────────────────────────────

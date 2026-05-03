@@ -520,7 +520,7 @@ function MarketplaceTab() {
   const onSubmit = (data: z.infer<typeof marketplaceSchema>) => {
     createMutation.mutate(data, {
       onSuccess: () => {
-        toast({ title: "Anunț publicat!", description: "Anunțul tău a apărut în marketplace." });
+        toast({ title: "Anunț trimis spre aprobare!", description: "Va fi vizibil după verificarea de către moderatori." });
         setShowForm(false);
         form.reset();
       },
@@ -569,8 +569,18 @@ function MarketplaceTab() {
               <FormField control={form.control} name="contact" render={({ field }) => (
                 <FormItem><FormLabel>Contact (telefon / WhatsApp)</FormLabel><FormControl><Input placeholder="07XX XXX XXX" {...field} data-testid="input-marketplace-contact" /></FormControl><FormMessage /></FormItem>
               )} />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Expiră la (opțional)</label>
+                <Input type="date" min={new Date().toISOString().slice(0,10)}
+                  {...(form as any).register("expiresAt")}
+                  className="w-full"
+                />
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                Anunțul va fi verificat de moderatori înainte de a fi publicat.
+              </div>
               <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-marketplace">
-                {createMutation.isPending ? "Se publică..." : "Publică anunț"}
+                {createMutation.isPending ? "Se trimite..." : "Trimite spre aprobare"}
               </Button>
             </form>
           </Form>
@@ -669,7 +679,7 @@ function JobsTab() {
   const onSubmit = (data: z.infer<typeof jobSchema>) => {
     createMutation.mutate(data, {
       onSuccess: () => {
-        toast({ title: "Job publicat!", description: "Anunțul de angajare a fost adăugat." });
+        toast({ title: "Job trimis spre aprobare!", description: "Va fi vizibil după verificarea de către moderatori." });
         setShowForm(false);
         form.reset();
       },
@@ -718,8 +728,18 @@ function JobsTab() {
               <FormField control={form.control} name="contact" render={({ field }) => (
                 <FormItem><FormLabel>Contact pentru aplicații</FormLabel><FormControl><Input placeholder="Telefon, email, adresă..." {...field} data-testid="input-job-contact" /></FormControl><FormMessage /></FormItem>
               )} />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Expiră la (opțional)</label>
+                <Input type="date" min={new Date().toISOString().slice(0,10)}
+                  {...(form as any).register("expiresAt")}
+                  className="w-full"
+                />
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                Anunțul va fi verificat de moderatori înainte de a fi publicat.
+              </div>
               <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-job">
-                {createMutation.isPending ? "Se publică..." : "Publică anunț"}
+                {createMutation.isPending ? "Se trimite..." : "Trimite spre aprobare"}
               </Button>
             </form>
           </Form>

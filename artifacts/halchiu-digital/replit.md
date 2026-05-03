@@ -60,8 +60,33 @@ Ecosistemul digital al comunei Hălchiu (Brașov). Platformă PWA mobilă cu aut
 
 ### Postări cu Dată de Expirare
 - Câmp `expiresAt` pe tabelul posts
-- Job de curățare rulează la startup și la fiecare 24h: șterge postările cu `expiresAt` > 24h în trecut
+- Job de curățare rulează la startup și la fiecare oră: șterge postările, marketplace-ul și joburile cu `expiresAt` > 24h în trecut; șterge și canalele de chat vechi
 - `storage.deleteExpiredPosts()` → logica de curățare
+
+### Moderare Marketplace & Joburi
+- **Orice utilizator autentificat** care adaugă un anunț în marketplace sau un job → statusul implicit este **pending**
+- Administratori/moderatori aprobă/resping din `/admin` tab Comunitate (subtab Marketplace / Joburi)
+- La aprobare/respingere: utilizatorul primește **notificare în-app + push**
+- `GET /api/marketplace` → returnează doar **active**
+- `GET /api/admin/marketplace` → returnează **toate** statusurile
+- `POST /api/marketplace/:id/approve` / `POST /api/marketplace/:id/reject` → moderator only
+- `GET /api/jobs` → returnează doar **active**
+- `GET /api/admin/jobs` → returnează **toate** statusurile
+- `POST /api/jobs/:id/approve` / `POST /api/jobs/:id/reject` → moderator only
+- Date seed (admin) sunt marcate automat ca **active** (ocolesc fluxul de moderare)
+- Câmpul `expiresAt` pe ambele tabele — anunțurile expirate se șterg automat după 24h de la expirare
+
+### Chat cu Auto-Delete 24h
+- Canalele de chat ale căror **primul mesaj** are >24h se șterg automat (toate mesajele din canal)
+- `storage.deleteOldChatChannels()` → rulează orar prin cleanup job
+
+### Imagini Auto-Generate pentru Evenimente
+- La crearea unui eveniment, dacă nu se furnizează `imageUrl`, serverul generează automat o imagine din `https://picsum.photos` pe baza categoriei și titlului
+- Categorii mapate: cultural → concert/festival, voluntariat → natură/mediu, sport → competiție, general → comunitate
+
+### Cereri (Primăria) — Acces Privat
+- Tab-ul **Cereri** nu mai este vizibil public — apare în bara de tab-uri **doar pentru utilizatori autentificați**
+- Butonul compact **"Cerere"** adăugat în header-ul paginii Primăria (lângă butonul "Sesizare"), vizibil doar dacă utilizatorul este autentificat
 
 ### Recomandări personalizate
 - Widget „Pentru tine" pe pagina principală (Home) — secțiune nouă în widget customizer

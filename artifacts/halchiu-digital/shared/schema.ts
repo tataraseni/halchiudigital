@@ -100,7 +100,8 @@ export const marketplaceItems = pgTable("marketplace_items", {
   price: text("price"),
   contact: text("contact").notNull(),
   imageUrl: text("image_url"),
-  status: text("status").notNull().default("active"),   // active | sold | inactive
+  status: text("status").notNull().default("pending"),   // pending | active | sold | inactive | rejected
+  expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -125,7 +126,8 @@ export const jobListings = pgTable("job_listings", {
   description: text("description").notNull(),
   type: text("type").notNull().default("full_time"),   // full_time | part_time | sezonier
   contact: text("contact").notNull(),
-  status: text("status").notNull().default("active"),  // active | filled | inactive
+  status: text("status").notNull().default("pending"),  // pending | active | filled | inactive | rejected
+  expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -159,6 +161,12 @@ export const insertBusinessSchema = createInsertSchema(businesses).omit({ id: tr
 export const insertMarketplaceItemSchema = createInsertSchema(marketplaceItems).omit({ id: true, createdAt: true, status: true });
 export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true, status: true });
 export const insertJobListingSchema = createInsertSchema(jobListings).omit({ id: true, createdAt: true, status: true });
+
+export const MARKETPLACE_STATUSES = ["pending", "active", "sold", "inactive", "rejected"] as const;
+export type MarketplaceStatus = typeof MARKETPLACE_STATUSES[number];
+
+export const JOB_STATUSES = ["pending", "active", "filled", "inactive", "rejected"] as const;
+export type JobStatus = typeof JOB_STATUSES[number];
 
 // ============ TYPES ============
 export type User = typeof users.$inferSelect;

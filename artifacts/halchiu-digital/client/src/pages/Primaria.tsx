@@ -416,11 +416,18 @@ export default function Primaria() {
           <h1 className="font-display font-bold text-xl">{s("primaria_name")}</h1>
           <p className="text-xs text-muted-foreground">{s("primaria_subtitle")}</p>
         </div>
-        {activeTab === "sesizari" && (
-          <Button size="sm" className="ml-auto rounded-full gap-1.5" onClick={() => setShowForm(v => !v)} data-testid="button-toggle-form">
-            {showForm ? <><X className="w-4 h-4" />Anulează</> : <><Plus className="w-4 h-4" />Sesizare</>}
-          </Button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {user && (
+            <Button size="sm" variant="outline" className="rounded-full gap-1.5 h-8 text-xs" onClick={() => { setActiveTab("cereri"); setShowForm(false); }} data-testid="button-open-cereri">
+              <FileText className="w-3.5 h-3.5" />Cerere
+            </Button>
+          )}
+          {activeTab === "sesizari" && (
+            <Button size="sm" className="rounded-full gap-1.5" onClick={() => setShowForm(v => !v)} data-testid="button-toggle-form">
+              {showForm ? <><X className="w-4 h-4" />Anulează</> : <><Plus className="w-4 h-4" />Sesizare</>}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Contact info */}
@@ -451,21 +458,24 @@ export default function Primaria() {
         </div>
       )}
 
-      {/* Tab bar */}
+      {/* Tab bar — only Sesizări visible publicly; Cereri are private (button in header) */}
       <div className="flex gap-1 mb-5 bg-muted/50 rounded-xl p-1">
-        {([
-          { id: "sesizari" as PrimariaTab, label: "Sesizări", icon: AlertCircle },
-          { id: "cereri" as PrimariaTab, label: "Cereri",   icon: FileText },
-        ] as const).map(({ id, label, icon: Icon }) => (
+        <button
+          onClick={() => { setActiveTab("sesizari"); setShowForm(false); }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${activeTab === "sesizari" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          data-testid="tab-sesizari"
+        >
+          <AlertCircle className="w-3.5 h-3.5" />Sesizări
+        </button>
+        {user && (
           <button
-            key={id}
-            onClick={() => { setActiveTab(id); setShowForm(false); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${activeTab === id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            data-testid={`tab-${id}`}
+            onClick={() => { setActiveTab("cereri"); setShowForm(false); }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${activeTab === "cereri" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            data-testid="tab-cereri"
           >
-            <Icon className="w-3.5 h-3.5" />{label}
+            <FileText className="w-3.5 h-3.5" />Cererile mele
           </button>
-        ))}
+        )}
       </div>
 
       {/* ── SESIZĂRI TAB ── */}
