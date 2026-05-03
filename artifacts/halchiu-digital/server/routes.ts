@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import webpush from "web-push";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
-import { insertPostSchema, insertReportSchema, insertEventSchema, insertBusinessSchema, insertUserSchema, insertServiceSchema, insertMarketplaceItemSchema, insertAnnouncementSchema, insertJobListingSchema, ROLES, OFFICIAL_ROLES } from "@shared/schema";
+import { insertPostSchema, insertReportSchema, insertEventSchema, insertBusinessSchema, insertUserSchema, insertServiceSchema, insertMarketplaceItemSchema, insertAnnouncementSchema, insertJobListingSchema, ROLES, OFFICIAL_ROLES, insertTransportRouteSchema } from "@shared/schema";
 import { requireAuth, requireRole, requireSectionPermission, permissions } from "./auth";
 import { z } from "zod";
 import type { Role } from "@shared/schema";
@@ -69,6 +69,24 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       ALTER TABLE businesses ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved';
       ALTER TABLE marketplace_items ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
       ALTER TABLE job_listings ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+    `);
+  } catch (_) {}
+
+  // ─── TRANSPORT ROUTES TABLE ───────────────────────────────────────────────
+  try {
+    const { pool: _pool } = await import("./db");
+    await _pool.query(`
+      CREATE TABLE IF NOT EXISTS transport_routes (
+        id SERIAL PRIMARY KEY,
+        type TEXT NOT NULL DEFAULT 'autobuz',
+        line TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        operator TEXT NOT NULL DEFAULT '',
+        departures TEXT NOT NULL DEFAULT '[]',
+        notes TEXT,
+        status TEXT NOT NULL DEFAULT 'activ',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
     `);
   } catch (_) {}
 
@@ -237,6 +255,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.put("/api/admin/users/:id", requireRole("administrator"), async (req, res) => {
     const id = Number(req.params.id);
     const { name, role, password } = req.body;
+    // Prevent admin from accidentally removing their own admin role
+    if (id === req.session.userId && role && role !== "administrator") {
+      return res.status(400).json({ message: "Nu îți poți schimba propriul rol. Cere altui administrator să facă asta." });
+    }
     const update: any = {};
     if (name) update.name = name;
     if (role) { if (!ROLES.includes(role)) return res.status(400).json({ message: "Rol invalid" }); update.role = role; }
@@ -674,6 +696,55 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ ok: true });
   });
 
+  // ─── TRANSPORT ROUTES ─────────────────────────────────────────────────────
+  app.get("/api/transport", async (_req, res) => {
+    res.json(await storage.getTransportRoutes());
+  });
+
+  app.get("/api/admin/transport", requireRole("administrator", "primar", "viceprimar", "functionar_public"), async (_req, res) => {
+    const all = await db.select().from((await import("@shared/schema")).transportRoutes).orderBy((await import("@shared/schema")).transportRoutes.createdAt);
+    res.json(all);
+  });
+
+  app.post("/api/transport", requireRole("administrator", "primar", "viceprimar", "functionar_public"), async (req, res) => {
+    try {
+      const input = insertTransportRouteSchema.parse(req.body);
+      res.status(201).json(await storage.createTransportRoute(input));
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      throw err;
+    }
+  });
+
+  app.put("/api/transport/:id", requireRole("administrator", "primar", "viceprimar", "functionar_public"), async (req, res) => {
+    const route = await storage.updateTransportRoute(Number(req.params.id), req.body);
+    if (!route) return res.status(404).json({ message: "Ruta nu există" });
+    res.json(route);
+  });
+
+  app.delete("/api/transport/:id", requireRole("administrator", "primar"), async (req, res) => {
+    await storage.deleteTransportRoute(Number(req.params.id));
+    res.json({ ok: true });
+  });
+
+  // ─── ADMIN: RESET CONTENT ─────────────────────────────────────────────────
+  app.post("/api/admin/reset-content", requireRole("administrator"), async (req, res) => {
+    const adminId = req.session.userId!;
+    const { pool } = await import("./db");
+    await pool.query(`
+      TRUNCATE TABLE
+        posts, events, reports, businesses, marketplace_items, job_listings,
+        community_announcements, notifications, services, transport_routes,
+        chat_messages, health_campaigns, health_alerts, doctor_profiles,
+        appointment_requests, social_programs, user_badges, event_participants,
+        municipal_requests, push_subscriptions, user_permissions,
+        weather_cache
+      RESTART IDENTITY CASCADE
+    `);
+    await pool.query(`DELETE FROM users WHERE id != $1`, [adminId]);
+    res.json({ ok: true, message: "Conținut resetat cu succes. Contul tău a fost păstrat." });
+  });
+
   // ─── MARKETPLACE ─────────────────────────────────────────────────────────
   app.get("/api/marketplace", async (_req, res) => {
     res.json(await storage.getMarketplaceItems());
@@ -955,6 +1026,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (typeof value !== "string") return res.status(400).json({ message: "Valoare invalidă" });
     await storage.updateSetting(key, value);
     res.json({ key, value });
+  });
+
+  // ─── DEMO MODE MIDDLEWARE ─────────────────────────────────────────────────
+  // Block all write operations when demo_mode is enabled (except admin overrides)
+  app.use(async (req, res, next) => {
+    if (!["POST","PUT","PATCH","DELETE"].includes(req.method)) return next();
+    // Always allow auth, settings changes, and the reset endpoint
+    const bypass = ["/api/auth/", "/api/settings/", "/api/admin/reset-content", "/api/push/"];
+    if (bypass.some(p => req.path.startsWith(p))) return next();
+    try {
+      const settings = await storage.getSettings();
+      if (settings["demo_mode"] === "true") {
+        return res.status(423).json({ message: "Aplicația este în modul demonstrativ (read-only). Modificările nu sunt permise." });
+      }
+    } catch (_) {}
+    next();
   });
 
   // ─── GAMIFICATION ────────────────────────────────────────────────────────
@@ -1436,6 +1523,19 @@ async function seedDatabase() {
     for (const [key, value, label, group] of settingsList) {
       await storage.setSetting(key, value, label, group);
     }
+  }
+  // Always ensure demo_mode setting exists (don't overwrite if already set)
+  await storage.setSetting("demo_mode", "false", "Mod demonstrativ (read-only)", "sistem");
+
+  // Seed transport routes from hardcoded timetable if table is empty
+  const existingTransport = await storage.getTransportRoutes();
+  if (existingTransport.length === 0) {
+    await Promise.all([
+      storage.createTransportRoute({ type: "autobuz", line: "Linia 19", direction: "Hălchiu → Brașov (Gara CFR)", operator: "RAT Brașov", departures: JSON.stringify(["06:05","06:45","07:20","08:00","08:35","09:15","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"]), notes: "Program L–V, cu unele curse în weekend.", status: "activ" }),
+      storage.createTransportRoute({ type: "autobuz", line: "Linia 19", direction: "Brașov (Gara CFR) → Hălchiu", operator: "RAT Brașov", departures: JSON.stringify(["06:30","07:15","07:50","08:30","09:10","09:50","10:45","11:45","12:45","13:45","14:45","15:45","16:45","17:45","18:45","19:45","20:45"]), notes: "Program L–V, cu unele curse în weekend.", status: "activ" }),
+      storage.createTransportRoute({ type: "maxitaxi", line: "Maxitaxi", direction: "Hălchiu ↔ Brașov (frecvent)", operator: "Operator privat", departures: JSON.stringify(["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30"]), notes: "Frecvență ridicată în orele de vârf.", status: "activ" }),
+      storage.createTransportRoute({ type: "taxi", line: "Taxi Hălchiu", direction: "Hălchiu – oriunde", operator: "Taxi local", departures: JSON.stringify([]), notes: "Contact: 0266 XXX XXX. Disponibil 24/7.", status: "activ" }),
+    ]);
   }
 
   if (existingServices.length === 0) {

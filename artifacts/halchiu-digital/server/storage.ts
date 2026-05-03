@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { posts, events, reports, businesses, users, appSettings, notifications, services, pushSubscriptions, marketplaceItems, announcements, jobListings, healthCampaigns, healthAlerts, doctorProfiles, appointmentRequests, socialPrograms, userBadges, chatMessages, weatherCache, userPermissions, eventParticipants, municipalRequests } from "@shared/schema";
+import { posts, events, reports, businesses, users, appSettings, notifications, services, pushSubscriptions, marketplaceItems, announcements, jobListings, healthCampaigns, healthAlerts, doctorProfiles, appointmentRequests, socialPrograms, userBadges, chatMessages, weatherCache, userPermissions, eventParticipants, municipalRequests, transportRoutes } from "@shared/schema";
 import { eq, sql, or, isNull, desc, and } from "drizzle-orm";
 import type {
   Post, InsertPost,
@@ -25,6 +25,7 @@ import type {
   UserPermission,
   EventParticipant,
   MunicipalRequest, InsertMunicipalRequest,
+  TransportRoute, InsertTransportRoute,
 } from "@shared/schema";
 
 export type RecommendationItem = {
@@ -195,6 +196,12 @@ export interface IStorage {
   createMunicipalRequest(req: InsertMunicipalRequest): Promise<MunicipalRequest>;
   updateMunicipalRequest(id: number, data: Partial<MunicipalRequest>): Promise<MunicipalRequest | undefined>;
   deleteMunicipalRequest(id: number): Promise<void>;
+  // Transport Routes
+  getTransportRoutes(): Promise<TransportRoute[]>;
+  getTransportRouteById(id: number): Promise<TransportRoute | undefined>;
+  createTransportRoute(route: InsertTransportRoute): Promise<TransportRoute>;
+  updateTransportRoute(id: number, data: Partial<TransportRoute>): Promise<TransportRoute | undefined>;
+  deleteTransportRoute(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -859,6 +866,26 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(userPermissions.userId, userId), eq(userPermissions.section, section)));
     if (!perm) return false;
     return perm[action] === true;
+  }
+
+  // ---- TRANSPORT ROUTES ----
+  async getTransportRoutes() {
+    return db.select().from(transportRoutes).where(eq(transportRoutes.status, "activ")).orderBy(transportRoutes.createdAt);
+  }
+  async getTransportRouteById(id: number) {
+    const [r] = await db.select().from(transportRoutes).where(eq(transportRoutes.id, id));
+    return r;
+  }
+  async createTransportRoute(route: InsertTransportRoute) {
+    const [r] = await db.insert(transportRoutes).values(route).returning();
+    return r;
+  }
+  async updateTransportRoute(id: number, data: Partial<TransportRoute>) {
+    const [r] = await db.update(transportRoutes).set(data).where(eq(transportRoutes.id, id)).returning();
+    return r;
+  }
+  async deleteTransportRoute(id: number) {
+    await db.delete(transportRoutes).where(eq(transportRoutes.id, id));
   }
 }
 

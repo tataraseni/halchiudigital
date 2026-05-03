@@ -211,194 +211,169 @@ function ServiceCard({ svc }: { svc: Service }) {
 }
 
 // ── Transport tab ─────────────────────────────────────────────────────────────
-type BusRoute = {
-  id: string;
+interface DbTransportRoute {
+  id: number;
+  type: string;
   line: string;
   direction: string;
   operator: string;
-  departures: string[];
-  icon: typeof Bus;
-  color: string;
+  departures: string;
+  notes: string | null;
+  status: string;
+}
+
+const TRANSPORT_ICON_MAP: Record<string, typeof Bus> = {
+  autobuz: Bus, tren: Train, taxi: Car, maxitaxi: Car, avion: Bus,
+};
+const TRANSPORT_COLOR_MAP: Record<string, string> = {
+  autobuz: "text-blue-600", tren: "text-amber-600", taxi: "text-yellow-600", maxitaxi: "text-amber-500", avion: "text-sky-600",
+};
+const TRANSPORT_BG_MAP: Record<string, string> = {
+  autobuz: "bg-blue-50 dark:bg-blue-950/30", tren: "bg-amber-50 dark:bg-amber-950/30",
+  taxi: "bg-yellow-50 dark:bg-yellow-950/30", maxitaxi: "bg-amber-50 dark:bg-amber-950/30", avion: "bg-sky-50 dark:bg-sky-950/30",
 };
 
-const BUS_ROUTES: BusRoute[] = [
-  {
-    id: "r1",
-    line: "Linia 19",
-    direction: "Hălchiu → Brașov (Gara CFR)",
-    operator: "RAT Brașov",
-    departures: ["06:05", "06:45", "07:20", "08:00", "08:35", "09:15", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"],
-    icon: Bus,
-    color: "text-blue-600",
-  },
-  {
-    id: "r2",
-    line: "Linia 19",
-    direction: "Brașov (Gara CFR) → Hălchiu",
-    operator: "RAT Brașov",
-    departures: ["06:30", "07:15", "07:50", "08:30", "09:10", "09:50", "10:45", "11:45", "12:45", "13:45", "14:45", "15:45", "16:45", "17:45", "18:45", "19:45", "20:45"],
-    icon: Bus,
-    color: "text-blue-600",
-  },
-  {
-    id: "r3",
-    line: "Maxitaxi",
-    direction: "Hălchiu ↔ Brașov (frecvent)",
-    operator: "Operator privat",
-    departures: ["06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"],
-    icon: Car,
-    color: "text-amber-600",
-  },
-];
+function parseDepartures(raw: string): string[] {
+  try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+}
 
 function getNextDepartures(departures: string[], count = 3): string[] {
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  const future = departures.filter(d => {
-    const [h, m] = d.split(":").map(Number);
-    return h * 60 + m > nowMins;
-  });
-  return future.slice(0, count);
+  return departures.filter(d => { const [h, m] = d.split(":").map(Number); return h * 60 + m > nowMins; }).slice(0, count);
 }
 
-function BusRouteCard({ route }: { route: BusRoute }) {
+function RouteCard({ route }: { route: DbTransportRoute }) {
   const [showAll, setShowAll] = useState(false);
-  const nextDeps = getNextDepartures(route.departures);
-  const Icon = route.icon;
+  const departures = parseDepartures(route.departures);
+  const nextDeps = getNextDepartures(departures);
+  const Icon = TRANSPORT_ICON_MAP[route.type] ?? Bus;
+  const color = TRANSPORT_COLOR_MAP[route.type] ?? "text-blue-600";
+  const bg = TRANSPORT_BG_MAP[route.type] ?? "bg-blue-50 dark:bg-blue-950/30";
 
   return (
     <div className="bg-card border border-card-border rounded-xl p-4" data-testid={`route-${route.id}`}>
       <div className="flex items-start gap-3 mb-3">
-        <div className={`w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center shrink-0`}>
-          <Icon className={`w-5 h-5 ${route.color}`} />
+        <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+          <Icon className={`w-5 h-5 ${color}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center text-xs font-bold bg-primary text-white px-2.5 py-0.5 rounded-full">
-              {route.line}
-            </span>
+            <span className="inline-flex items-center text-xs font-bold bg-primary text-white px-2.5 py-0.5 rounded-full">{route.line}</span>
             <span className="text-xs text-muted-foreground">{route.operator}</span>
           </div>
           <p className="text-sm font-semibold mt-1 flex items-center gap-1">
-            <ArrowRight className="w-3.5 h-3.5 text-primary shrink-0" />
-            {route.direction}
+            <ArrowRight className="w-3.5 h-3.5 text-primary shrink-0" />{route.direction}
           </p>
+          {route.notes && <p className="text-xs text-muted-foreground mt-0.5">{route.notes}</p>}
         </div>
       </div>
 
-      {/* Next departures */}
-      {nextDeps.length > 0 ? (
-        <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40 rounded-lg p-2.5 mb-3">
-          <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wide mb-1.5">Plecări în curând</p>
-          <div className="flex gap-2 flex-wrap">
-            {nextDeps.map(d => (
-              <span key={d} className="inline-flex items-center gap-1 text-xs font-bold bg-green-600 text-white px-2.5 py-1 rounded-full">
-                <Clock className="w-3 h-3" />{d}
-              </span>
-            ))}
-          </div>
-        </div>
+      {departures.length > 0 ? (
+        <>
+          {nextDeps.length > 0 ? (
+            <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40 rounded-lg p-2.5 mb-3">
+              <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wide mb-1.5">Plecări în curând</p>
+              <div className="flex gap-2 flex-wrap">
+                {nextDeps.map(d => (
+                  <span key={d} className="inline-flex items-center gap-1 text-xs font-bold bg-green-600 text-white px-2.5 py-1 rounded-full">
+                    <Clock className="w-3 h-3" />{d}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-muted/50 border border-border rounded-lg p-2.5 mb-3">
+              <p className="text-xs text-muted-foreground text-center">Nu mai sunt plecări azi. Mâine primul: {departures[0]}</p>
+            </div>
+          )}
+          <button onClick={() => setShowAll(v => !v)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+            data-testid={`button-all-departures-${route.id}`}>
+            <Clock className="w-3.5 h-3.5" />
+            {showAll ? "Ascunde toate orele" : `Toate plecările (${departures.length})`}
+            {showAll ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+          </button>
+          {showAll && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {departures.map(d => {
+                const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+                const [h, m] = d.split(":").map(Number);
+                const isPast = h * 60 + m <= nowMins;
+                return (
+                  <span key={d} className={`text-xs px-2 py-0.5 rounded-full border font-medium ${isPast ? "text-muted-foreground/50 border-border/50 bg-muted/30" : "text-foreground border-border bg-muted/40"}`}>{d}</span>
+                );
+              })}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="bg-muted/50 border border-border rounded-lg p-2.5 mb-3">
-          <p className="text-xs text-muted-foreground text-center">Nu mai sunt plecări azi. Mâine primul: {route.departures[0]}</p>
-        </div>
-      )}
-
-      {/* All departures toggle */}
-      <button
-        onClick={() => setShowAll(v => !v)}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-        data-testid={`button-all-departures-${route.id}`}
-      >
-        <Clock className="w-3.5 h-3.5" />
-        {showAll ? "Ascunde toate orele" : `Toate plecările (${route.departures.length})`}
-        {showAll ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
-      </button>
-
-      {showAll && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {route.departures.map(d => {
-            const now = new Date();
-            const nowMins = now.getHours() * 60 + now.getMinutes();
-            const [h, m] = d.split(":").map(Number);
-            const isPast = h * 60 + m <= nowMins;
-            return (
-              <span
-                key={d}
-                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors ${isPast ? "text-muted-foreground/50 border-border/50 bg-muted/30" : "text-foreground border-border bg-muted/40"}`}
-              >
-                {d}
-              </span>
-            );
-          })}
-        </div>
+        <p className="text-xs text-muted-foreground">Contact direct pentru orar.</p>
       )}
     </div>
   );
 }
 
 function TransportTab() {
+  const { data: routes = [], isLoading } = useQuery<DbTransportRoute[]>({ queryKey: ["/api/transport"] });
+
+  const busRoutes = routes.filter(r => r.type === "autobuz" && r.status === "activ");
+  const trainRoutes = routes.filter(r => r.type === "tren" && r.status === "activ");
+  const taxiRoutes = routes.filter(r => r.type === "taxi" && r.status === "activ");
+  const otherRoutes = routes.filter(r => !["autobuz","tren","taxi"].includes(r.type) && r.status === "activ");
+
   return (
     <div className="space-y-4">
-      {/* Header info */}
       <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-3 flex items-start gap-3">
         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <div>
           <p className="text-xs font-bold text-blue-700 dark:text-blue-400">Transport public Hălchiu – Brașov</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Orare orientative. Verificați modificările la operator sau la stație. Program L–V, cu unele curse în weekend.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Orare orientative. Verificați modificările la operator sau la stație.</p>
         </div>
       </div>
 
-      {/* Train info */}
-      <div className="bg-card border border-card-border rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center shrink-0">
-            <Train className="w-5 h-5 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center text-xs font-bold bg-amber-600 text-white px-2.5 py-0.5 rounded-full">CFR Călători</span>
+      {isLoading && <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-32 bg-muted/40 rounded-xl animate-pulse" />)}</div>}
+
+      {trainRoutes.length > 0 && trainRoutes.map(r => <RouteCard key={r.id} route={r} />)}
+
+      {trainRoutes.length === 0 && !isLoading && (
+        <div className="bg-card border border-card-border rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center shrink-0">
+              <Train className="w-5 h-5 text-amber-600" />
             </div>
-            <p className="text-sm font-semibold">Hălchiu → Brașov (tren)</p>
-            <p className="text-xs text-muted-foreground mt-1">Stația CFR Hălchiu se află la ~2 km de centrul comunei. Curse frecvente pe ruta Brașov–Sibiu.</p>
-            <a
-              href="https://www.cfrcalatori.ro/orar-tren/?fromStation=Halchiu&toStation=Brasov"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 mt-2 text-xs text-primary hover:underline font-medium"
-            >
-              <ArrowRight className="w-3 h-3" />Caută tren pe CFR Călători
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Bus routes */}
-      {BUS_ROUTES.map(route => <BusRouteCard key={route.id} route={route} />)}
-
-      {/* Taxi strip */}
-      <div className="bg-card border border-card-border rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center shrink-0">
-            <Car className="w-5 h-5 text-yellow-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold mb-1">Taxi local</p>
-            <div className="space-y-1">
-              {[
-                { name: "Taxi Hălchiu", phone: "0266 XXX XXX" },
-                { name: "Star Taxi Brașov", phone: "0268 123 123" },
-              ].map(t => (
-                <a key={t.name} href={`tel:${t.phone}`} className="flex items-center gap-2 text-xs text-primary hover:underline">
-                  <Phone className="w-3 h-3 shrink-0" />{t.name}: {t.phone}
-                </a>
-              ))}
+            <div className="flex-1">
+              <span className="inline-flex items-center text-xs font-bold bg-amber-600 text-white px-2.5 py-0.5 rounded-full mb-1">CFR Călători</span>
+              <p className="text-sm font-semibold">Hălchiu → Brașov (tren)</p>
+              <p className="text-xs text-muted-foreground mt-1">Stația CFR Hălchiu se află la ~2 km de centrul comunei.</p>
+              <a href="https://www.cfrcalatori.ro" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-2 text-xs text-primary hover:underline font-medium">
+                <ArrowRight className="w-3 h-3" />Caută tren pe CFR Călători
+              </a>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Disclaimer */}
+      {busRoutes.map(r => <RouteCard key={r.id} route={r} />)}
+      {otherRoutes.map(r => <RouteCard key={r.id} route={r} />)}
+
+      {taxiRoutes.length > 0 ? taxiRoutes.map(r => <RouteCard key={r.id} route={r} />) : (
+        <div className="bg-card border border-card-border rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-950/30 flex items-center justify-center shrink-0">
+              <Car className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold mb-1">Taxi local</p>
+              <a href="tel:0266000000" className="flex items-center gap-2 text-xs text-primary hover:underline">
+                <Phone className="w-3 h-3 shrink-0" />Taxi Hălchiu: 0266 XXX XXX
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       <p className="text-[10px] text-muted-foreground text-center px-4">
         * Orare orientative. Pot exista modificări în funcție de sezon, sărbători legale sau lucrări rutiere.
       </p>

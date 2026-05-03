@@ -15,7 +15,8 @@ import {
   Pencil, Trash2, Plus, X, Check, Shield, ChevronLeft, Settings2,
   BarChart3, TrendingUp, Clock, CheckCircle2, MapPin, Activity, Target, RefreshCw,
   ShieldCheck, ShieldX, BadgeCheck, ThumbsUp, ThumbsDown, Eye, EyeOff,
-  Stethoscope, Bell, Wrench, Briefcase, Megaphone, Building2, Send, BellRing, ExternalLink
+  Stethoscope, Bell, Wrench, Briefcase, Megaphone, Building2, Send, BellRing, ExternalLink,
+  Bus, Train, Car, Snowflake, TriangleAlert, RotateCcw
 } from "lucide-react";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -451,13 +452,67 @@ function SettingRow({ settingKey, label, textarea }: { settingKey: string; label
 }
 
 function SettingsTab() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { settings } = useSettings();
+  const updateMutation = useUpdateSetting();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ "Identitate Aplicație": true });
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const toggle = (group: string) => setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
+
+  const demoMode = settings["demo_mode"] === "true";
+
+  const toggleDemoMode = () => {
+    const newVal = demoMode ? "false" : "true";
+    updateMutation.mutate({ key: "demo_mode", value: newVal }, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/settings"] });
+        toast({ title: newVal === "true" ? "Modul demonstrativ activat" : "Modul demonstrativ dezactivat", description: newVal === "true" ? "Aplicația este acum read-only. Cetățenii nu pot posta." : "Aplicația este acum în modul normal." });
+      },
+    });
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      const res = await fetch("/api/admin/reset-content", { method: "POST" });
+      if (!res.ok) throw new Error((await res.json()).message);
+      toast({ title: "Baza de date resetată", description: "Tot conținutul a fost șters. Contul tău a fost păstrat." });
+      qc.invalidateQueries();
+      setConfirmReset(false);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Eroare la resetare", description: e.message });
+    } finally {
+      setResetting(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">Modificările se aplică imediat în toată aplicația.</p>
+
+      {/* Demo mode toggle */}
+      <div className={`border rounded-xl p-4 flex items-center gap-3 ${demoMode ? "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/50" : "bg-card border-card-border"}`}>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${demoMode ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted"}`}>
+          <Snowflake className={`w-4.5 h-4.5 ${demoMode ? "text-amber-600" : "text-muted-foreground"}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">{demoMode ? "Modul demonstrativ activ" : "Mod demonstrativ"}</p>
+          <p className="text-xs text-muted-foreground">Înghețați aplicația în read-only. Nicio postare nouă nu va fi acceptată.</p>
+        </div>
+        <Button
+          size="sm"
+          variant={demoMode ? "default" : "outline"}
+          className={`shrink-0 gap-1.5 ${demoMode ? "bg-amber-600 hover:bg-amber-700 text-white border-amber-600" : ""}`}
+          onClick={toggleDemoMode}
+          disabled={updateMutation.isPending}
+        >
+          {demoMode ? <><Snowflake className="w-3.5 h-3.5" />Dezactivează</> : <><Snowflake className="w-3.5 h-3.5" />Activează</>}
+        </Button>
+      </div>
+
       {SETTINGS_GROUPS.map(({ group, items }) => (
         <div key={group} className="bg-card border border-card-border rounded-xl overflow-hidden">
           <button
@@ -477,6 +532,33 @@ function SettingsTab() {
           )}
         </div>
       ))}
+
+      {/* Danger zone — DB reset */}
+      <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <TriangleAlert className="w-4 h-4 text-red-600 shrink-0" />
+          <h3 className="font-display font-semibold text-sm text-red-800 dark:text-red-400">Resetare conținut bază de date</h3>
+        </div>
+        <p className="text-xs text-red-700 dark:text-red-400">
+          Șterge tot conținutul: postări, sesizări, afaceri, evenimente, marketplace, joburi, servicii, transport, sănătate, chat și toți utilizatorii <strong>cu excepția contului tău</strong>.
+          Setările aplicației sunt păstrate. Această acțiune este <strong>ireversibilă</strong>.
+        </p>
+        {!confirmReset ? (
+          <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setConfirmReset(true)}>
+            <RotateCcw className="w-3.5 h-3.5" />Resetează conținutul
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-red-700 dark:text-red-400">Ești sigur? Această acțiune nu poate fi anulată!</p>
+            <div className="flex gap-2">
+              <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleReset} disabled={resetting}>
+                <RotateCcw className="w-3.5 h-3.5" />{resetting ? "Se resetează..." : "Da, șterge tot"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setConfirmReset(false)}>Anulează</Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1052,14 +1134,19 @@ function UsersTab() {
         </div>
       )}
       {isLoading && <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>}
-      {userList?.map(u => (
-        <div key={u.id} className={`bg-card border rounded-xl p-4 ${u.role === "specialist" ? "border-teal-200 dark:border-teal-800/40" : "border-card-border"}`}>
+      {userList?.map(u => {
+        const isSelf = u.id === undefined; // will be determined at runtime via useAuth
+        return (
+        <div key={u.id} className={`bg-card border rounded-xl p-4 ${u.role === "administrator" ? "border-primary/30 dark:border-primary/20" : u.role === "specialist" ? "border-teal-200 dark:border-teal-800/40" : "border-card-border"}`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${u.role === "administrator" ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"}`}>
               {u.name[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{u.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-semibold truncate">{u.name}</p>
+                {u.role === "administrator" && <Shield className="w-3.5 h-3.5 text-primary shrink-0" />}
+              </div>
               <p className="text-xs text-muted-foreground">@{u.username}</p>
             </div>
             <Select value={u.role} onValueChange={v => updateRoleMutation.mutate({ id: u.id, role: v })}>
@@ -1076,7 +1163,8 @@ function UsersTab() {
             <PermissionEditor userId={u.id} userName={u.name} />
           )}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1300,9 +1388,111 @@ const SERVICE_CATEGORY_LABELS_MAP: Record<string, string> = {
   medical:"Medical", administratie:"Administrație", educatie:"Educație", utilitati:"Utilități", posta:"Poștă"
 };
 
+type ServiceSubTab = "servicii" | "transport";
+
+const TRANSPORT_TYPE_ICONS: Record<string, typeof Bus> = {
+  autobuz: Bus, tren: Train, taxi: Car, maxitaxi: Car, avion: Bus,
+};
+const TRANSPORT_TYPE_LABELS_ADMIN: Record<string, string> = {
+  autobuz: "Autobuz", tren: "Tren", taxi: "Taxi", maxitaxi: "Maxitaxi", avion: "Avion",
+};
+
+interface TransportRoute {
+  id: number; type: string; line: string; direction: string; operator: string;
+  departures: string; notes: string | null; status: string;
+}
+
+function TransportAdminSection() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: routes, isLoading } = useQuery<TransportRoute[]>({
+    queryKey: ["/api/admin/transport"],
+    queryFn: () => api("GET", "/api/admin/transport"),
+  });
+  const [creating, setCreating] = useState(false);
+  const [newRoute, setNewRoute] = useState({ type: "autobuz", line: "", direction: "", operator: "", departures: "", notes: "", status: "activ" });
+
+  const inv = () => { qc.invalidateQueries({ queryKey: ["/api/admin/transport"] }); qc.invalidateQueries({ queryKey: ["/api/transport"] }); };
+  const deleteMutation = useMutation({ mutationFn: (id: number) => api("DELETE", `/api/transport/${id}`), onSuccess: () => { inv(); toast({ title: "Rută ștearsă" }); } });
+  const updateMutation = useMutation({ mutationFn: ({ id, data }: { id: number; data: any }) => api("PUT", `/api/transport/${id}`, data), onSuccess: () => inv() });
+  const createMutation = useMutation({
+    mutationFn: (d: typeof newRoute) => api("POST", "/api/transport", {
+      ...d,
+      departures: JSON.stringify(d.departures.split(",").map(s => s.trim()).filter(Boolean)),
+    }),
+    onSuccess: () => { inv(); setCreating(false); setNewRoute({ type: "autobuz", line: "", direction: "", operator: "", departures: "", notes: "", status: "activ" }); toast({ title: "Rută adăugată" }); },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Eroare", description: e.message }),
+  });
+
+  const parseDeps = (d: string) => { try { return JSON.parse(d) as string[]; } catch { return []; } };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">Rute transport public — autobuz, tren, taxi, maxitaxi.</p>
+        <Button size="sm" className="gap-1.5 rounded-full" onClick={() => setCreating(v => !v)}>
+          {creating ? <><X className="w-3.5 h-3.5" />Anulează</> : <><Plus className="w-3.5 h-3.5" />Rută nouă</>}
+        </Button>
+      </div>
+      {creating && (
+        <div className="bg-card border border-card-border rounded-xl p-4 space-y-3">
+          <select className="w-full text-sm border rounded-lg px-3 py-2 bg-background" value={newRoute.type} onChange={e => setNewRoute(p=>({...p,type:e.target.value}))}>
+            {Object.entries(TRANSPORT_TYPE_LABELS_ADMIN).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <Input placeholder="Linie (ex: Linia 19, CFR Călători)" value={newRoute.line} onChange={e => setNewRoute(p=>({...p,line:e.target.value}))} />
+          <Input placeholder="Direcție (ex: Hălchiu → Brașov)" value={newRoute.direction} onChange={e => setNewRoute(p=>({...p,direction:e.target.value}))} />
+          <Input placeholder="Operator (ex: RAT Brașov)" value={newRoute.operator} onChange={e => setNewRoute(p=>({...p,operator:e.target.value}))} />
+          <Input placeholder="Plecări separate prin virgulă (ex: 06:05, 07:20)" value={newRoute.departures} onChange={e => setNewRoute(p=>({...p,departures:e.target.value}))} />
+          <Input placeholder="Note (opțional)" value={newRoute.notes} onChange={e => setNewRoute(p=>({...p,notes:e.target.value}))} />
+          <Button size="sm" className="w-full" onClick={() => createMutation.mutate(newRoute)} disabled={!newRoute.line || !newRoute.direction || createMutation.isPending}>Adaugă rută</Button>
+        </div>
+      )}
+      {isLoading && <div className="space-y-2">{[1,2,3].map(i=><Skeleton key={i} className="h-24 rounded-xl"/>)}</div>}
+      {routes?.map(r => {
+        const Icon = TRANSPORT_TYPE_ICONS[r.type] ?? Bus;
+        const deps = parseDeps(r.departures);
+        return (
+          <div key={r.id} className={`bg-card border rounded-xl p-4 ${r.status !== "activ" ? "border-muted opacity-60" : "border-card-border"}`}>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-1 text-xs bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-700/40">
+                  <Icon className="w-3 h-3" />{TRANSPORT_TYPE_LABELS_ADMIN[r.type] ?? r.type}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${r.status === "activ" ? "bg-green-100 text-green-700 border-green-200" : "bg-muted text-muted-foreground border-border"}`}>{r.status}</span>
+              </div>
+              <DeleteBtn onClick={() => deleteMutation.mutate(r.id)} />
+            </div>
+            <EditableRow label="Linie" value={r.line} onSave={v => updateMutation.mutate({ id: r.id, data: { line: v } })} />
+            <EditableRow label="Direcție" value={r.direction} onSave={v => updateMutation.mutate({ id: r.id, data: { direction: v } })} />
+            <EditableRow label="Operator" value={r.operator} onSave={v => updateMutation.mutate({ id: r.id, data: { operator: v } })} />
+            <EditableRow label="Note" value={r.notes ?? ""} onSave={v => updateMutation.mutate({ id: r.id, data: { notes: v } })} />
+            <div className="mt-2">
+              <p className="text-[10px] text-muted-foreground mb-1">Plecări ({deps.length}): {deps.join(", ") || "—"}</p>
+              <EditableRow label="Plecări (separate prin virgulă)" value={deps.join(", ")} onSave={v => {
+                const arr = v.split(",").map(s => s.trim()).filter(Boolean);
+                updateMutation.mutate({ id: r.id, data: { departures: JSON.stringify(arr) } });
+              }} />
+            </div>
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <Select value={r.status} onValueChange={v => updateMutation.mutate({ id: r.id, data: { status: v } })}>
+                <SelectTrigger className="h-7 text-xs rounded-full w-36"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activ">Activ</SelectItem>
+                  <SelectItem value="inactiv">Inactiv</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ServciiTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [sub, setSub] = useState<ServiceSubTab>("servicii");
   const { data: services, isLoading } = useQuery<Service[]>({
     queryKey: ["/api/admin/services"],
     queryFn: () => api("GET", "/api/admin/services"),
@@ -1320,56 +1510,75 @@ function ServciiTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">Servicii publice locale vizibile în pagina Servicii.</p>
-        <div className="flex items-center gap-2 shrink-0">
-          <Link href="/servicii" data-testid="link-public-servicii">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-              Pagina publică <ExternalLink className="w-3 h-3" />
-            </span>
-          </Link>
-          <Button size="sm" className="gap-1.5 rounded-full" onClick={() => setCreating(v => !v)}>
-            {creating ? <><X className="w-3.5 h-3.5" />Anulează</> : <><Plus className="w-3.5 h-3.5" />Serviciu nou</>}
-          </Button>
-        </div>
+      {/* Sub-tab selector */}
+      <div className="flex gap-1 bg-muted/50 rounded-xl p-1">
+        {([
+          { id: "servicii" as ServiceSubTab, label: "Servicii publice", icon: Building2 },
+          { id: "transport" as ServiceSubTab, label: "Transport", icon: Bus },
+        ]).map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setSub(id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-colors ${sub === id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+            <Icon className="w-3.5 h-3.5" />{label}
+          </button>
+        ))}
       </div>
-      {creating && (
-        <div className="bg-card border border-card-border rounded-xl p-4 space-y-3">
-          <Input placeholder="Nume serviciu" value={newSvc.name} onChange={e => setNewSvc(p=>({...p,name:e.target.value}))} />
-          <select className="w-full text-sm border rounded-lg px-3 py-2 bg-background" value={newSvc.category} onChange={e => setNewSvc(p=>({...p,category:e.target.value}))}>
-            {SERVICE_CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{SERVICE_CATEGORY_LABELS_MAP[c]}</option>)}
-          </select>
-          <Input placeholder="Tip (ex: farmacie, scoala, primarie)" value={newSvc.type} onChange={e => setNewSvc(p=>({...p,type:e.target.value}))} />
-          <Input placeholder="Telefon" value={newSvc.phone} onChange={e => setNewSvc(p=>({...p,phone:e.target.value}))} />
-          <Input placeholder="Adresă" value={newSvc.address} onChange={e => setNewSvc(p=>({...p,address:e.target.value}))} />
-          <Button size="sm" className="w-full" onClick={() => createMutation.mutate(newSvc)} disabled={createMutation.isPending}>Adaugă</Button>
-        </div>
-      )}
-      {isLoading && <div className="space-y-2">{[1,2,3].map(i=><Skeleton key={i} className="h-24 rounded-xl"/>)}</div>}
-      {services?.map(svc => (
-        <div key={svc.id} className={`bg-card border rounded-xl p-4 ${svc.status !== "activ" ? "border-muted" : "border-card-border"}`}>
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{SERVICE_CATEGORY_LABELS_MAP[svc.category] ?? svc.category}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${svc.status === "activ" ? "bg-green-100 text-green-700 border-green-200" : "bg-muted text-muted-foreground border-border"}`}>{svc.status}</span>
+
+      {sub === "transport" ? (
+        <TransportAdminSection />
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">Servicii publice locale vizibile în pagina Servicii.</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href="/servicii" data-testid="link-public-servicii">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Pagina publică <ExternalLink className="w-3 h-3" />
+                </span>
+              </Link>
+              <Button size="sm" className="gap-1.5 rounded-full" onClick={() => setCreating(v => !v)}>
+                {creating ? <><X className="w-3.5 h-3.5" />Anulează</> : <><Plus className="w-3.5 h-3.5" />Serviciu nou</>}
+              </Button>
             </div>
-            <DeleteBtn onClick={() => deleteMutation.mutate(svc.id)} />
           </div>
-          <EditableRow label="Nume" value={svc.name} onSave={v => updateMutation.mutate({ id: svc.id, data: { name: v } })} />
-          <EditableRow label="Telefon" value={svc.phone ?? ""} onSave={v => updateMutation.mutate({ id: svc.id, data: { phone: v } })} />
-          <EditableRow label="Adresă" value={svc.address ?? ""} onSave={v => updateMutation.mutate({ id: svc.id, data: { address: v } })} />
-          <div className="mt-3 pt-3 border-t border-border/40">
-            <Select value={svc.status} onValueChange={v => updateMutation.mutate({ id: svc.id, data: { status: v } })}>
-              <SelectTrigger className="h-7 text-xs rounded-full w-36"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="activ">Activ</SelectItem>
-                <SelectItem value="inactiv">Inactiv</SelectItem>
-                <SelectItem value="temporar_inchis">Temporar închis</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      ))}
+          {creating && (
+            <div className="bg-card border border-card-border rounded-xl p-4 space-y-3">
+              <Input placeholder="Nume serviciu" value={newSvc.name} onChange={e => setNewSvc(p=>({...p,name:e.target.value}))} />
+              <select className="w-full text-sm border rounded-lg px-3 py-2 bg-background" value={newSvc.category} onChange={e => setNewSvc(p=>({...p,category:e.target.value}))}>
+                {SERVICE_CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{SERVICE_CATEGORY_LABELS_MAP[c]}</option>)}
+              </select>
+              <Input placeholder="Tip (ex: farmacie, scoala, primarie)" value={newSvc.type} onChange={e => setNewSvc(p=>({...p,type:e.target.value}))} />
+              <Input placeholder="Telefon" value={newSvc.phone} onChange={e => setNewSvc(p=>({...p,phone:e.target.value}))} />
+              <Input placeholder="Adresă" value={newSvc.address} onChange={e => setNewSvc(p=>({...p,address:e.target.value}))} />
+              <Button size="sm" className="w-full" onClick={() => createMutation.mutate(newSvc)} disabled={createMutation.isPending}>Adaugă</Button>
+            </div>
+          )}
+          {isLoading && <div className="space-y-2">{[1,2,3].map(i=><Skeleton key={i} className="h-24 rounded-xl"/>)}</div>}
+          {services?.map(svc => (
+            <div key={svc.id} className={`bg-card border rounded-xl p-4 ${svc.status !== "activ" ? "border-muted" : "border-card-border"}`}>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{SERVICE_CATEGORY_LABELS_MAP[svc.category] ?? svc.category}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${svc.status === "activ" ? "bg-green-100 text-green-700 border-green-200" : "bg-muted text-muted-foreground border-border"}`}>{svc.status}</span>
+                </div>
+                <DeleteBtn onClick={() => deleteMutation.mutate(svc.id)} />
+              </div>
+              <EditableRow label="Nume" value={svc.name} onSave={v => updateMutation.mutate({ id: svc.id, data: { name: v } })} />
+              <EditableRow label="Telefon" value={svc.phone ?? ""} onSave={v => updateMutation.mutate({ id: svc.id, data: { phone: v } })} />
+              <EditableRow label="Adresă" value={svc.address ?? ""} onSave={v => updateMutation.mutate({ id: svc.id, data: { address: v } })} />
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <Select value={svc.status} onValueChange={v => updateMutation.mutate({ id: svc.id, data: { status: v } })}>
+                  <SelectTrigger className="h-7 text-xs rounded-full w-36"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="activ">Activ</SelectItem>
+                    <SelectItem value="inactiv">Inactiv</SelectItem>
+                    <SelectItem value="temporar_inchis">Temporar închis</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }

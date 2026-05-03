@@ -588,6 +588,33 @@ export const CHAT_CHANNEL_LABELS: Record<ChatChannel, string> = {
   events: "Evenimente",
 };
 
+// ============ TRANSPORT ROUTES ============
+export const transportRoutes = pgTable("transport_routes", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull().default("autobuz"),  // autobuz | tren | taxi | maxitaxi | avion
+  line: text("line").notNull(),
+  direction: text("direction").notNull(),
+  operator: text("operator").notNull().default(""),
+  departures: text("departures").notNull().default("[]"),  // JSON: string[]
+  notes: text("notes"),
+  status: text("status").notNull().default("activ"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTransportRouteSchema = createInsertSchema(transportRoutes).omit({ id: true, createdAt: true });
+export type TransportRoute = typeof transportRoutes.$inferSelect;
+export type InsertTransportRoute = z.infer<typeof insertTransportRouteSchema>;
+
+export const TRANSPORT_TYPES = ["autobuz", "tren", "taxi", "maxitaxi", "avion"] as const;
+export type TransportType = typeof TRANSPORT_TYPES[number];
+export const TRANSPORT_TYPE_LABELS: Record<TransportType, string> = {
+  autobuz: "Autobuz",
+  tren: "Tren",
+  taxi: "Taxi",
+  maxitaxi: "Maxitaxi",
+  avion: "Avion",
+};
+
 // ============ WEATHER CACHE ============
 export const weatherCache = pgTable("weather_cache", {
   id: serial("id").primaryKey(),
