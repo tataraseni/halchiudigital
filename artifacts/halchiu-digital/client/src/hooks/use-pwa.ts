@@ -120,7 +120,15 @@ export function useInstallPrompt() {
     localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
   };
 
-  return { showPrompt, install, dismiss, platform, isIOS: platform === "ios" };
+  const resetDismissed = () => {
+    localStorage.removeItem(INSTALL_DISMISSED_KEY);
+    localStorage.removeItem(INSTALL_SHOWN_KEY);
+  };
+
+  const isInstalled = isInStandaloneMode();
+  const canInstall = !isInstalled && (deferredPrompt !== null || platform === "ios");
+
+  return { showPrompt, install, dismiss, platform, isIOS: platform === "ios", isInstalled, canInstall, resetDismissed, deferredPrompt };
 }
 
 // ── Haptic feedback ───────────────────────────────────────────────────────────

@@ -2,12 +2,126 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
 import { Link } from "wouter";
-import { Moon, Sun, Bell, ChevronRight, LogOut, Settings, Shield } from "lucide-react";
+import { Moon, Sun, Bell, ChevronRight, LogOut, Settings, Shield, Download, Share, MoreHorizontal, Leaf, Smartphone, CheckCircle2 } from "lucide-react";
 import { useNotificationPrefs, PREF_LABELS, type NotificationCategory } from "@/hooks/use-notification-prefs";
+import { useInstallPrompt, isIOS, isAndroid, isMobile, isInStandaloneMode } from "@/hooks/use-pwa";
 
 const CATEGORY_ORDER: NotificationCategory[] = [
   "anunturi_oficiale", "sesizari", "evenimente", "comunitate", "moderare", "sistem",
 ];
+
+function InstallCard() {
+  const { install, deferredPrompt, resetDismissed, platform } = useInstallPrompt();
+  const [iosExpanded, setIosExpanded] = useState(false);
+  const [androidFallback, setAndroidFallback] = useState(false);
+  const installed = isInStandaloneMode();
+
+  if (installed) {
+    return (
+      <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40 rounded-xl p-4 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+          <CheckCircle2 className="w-4.5 h-4.5 text-green-600" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-green-800 dark:text-green-300">Aplicația e instalată</p>
+          <p className="text-xs text-green-700/70 dark:text-green-400/70 mt-0.5">Rulezi Hălchiu Digital ca aplicație nativă.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const onAndroid = isAndroid() || (!isIOS() && isMobile());
+  const onIOS = isIOS();
+
+  const handleAndroidInstall = () => {
+    if (deferredPrompt) {
+      install();
+    } else {
+      resetDismissed();
+      setAndroidFallback(true);
+    }
+  };
+
+  return (
+    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Smartphone className="w-4.5 h-4.5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold">Instalează aplicația</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Acces rapid, notificări și mod offline</p>
+        </div>
+      </div>
+
+      {/* Benefits */}
+      <div className="grid grid-cols-1 gap-1.5">
+        {[
+          "Pictogramă pe ecranul principal",
+          "Notificări push pentru anunțuri și sesizări",
+          "Funcționează și fără internet",
+          "Experiență ca o aplicație nativă",
+        ].map(b => (
+          <div key={b} className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+            {b}
+          </div>
+        ))}
+      </div>
+
+      {/* Android install */}
+      {(onAndroid || (!onIOS && !onAndroid)) && (
+        <div className="space-y-2">
+          <button
+            onClick={handleAndroidInstall}
+            className="w-full flex items-center justify-center gap-2 bg-primary text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Instalează
+          </button>
+          {androidFallback && (
+            <div className="bg-muted/50 rounded-xl p-3 space-y-2 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">Instalare manuală din browser:</p>
+              <p>În Chrome, apasă <strong>⋮</strong> (meniu, colț dreapta sus) → <strong>Adaugă pe ecranul principal</strong>.</p>
+              <p>Pagina va fi reîncărcată data viitoare cu opțiunea de instalare activă.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* iOS install */}
+      {onIOS && (
+        <div className="space-y-2">
+          <button
+            onClick={() => setIosExpanded(v => !v)}
+            className="w-full flex items-center justify-center gap-2 bg-primary text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
+          >
+            <Share className="w-4 h-4" />
+            {iosExpanded ? "Ascunde instrucțiunile" : "Cum instalez?"}
+          </button>
+          {iosExpanded && (
+            <div className="space-y-2">
+              {[
+                { icon: <Share className="w-3.5 h-3.5 text-blue-600" />, bg: "bg-blue-100 dark:bg-blue-900/40", step: '1. Apasă butonul Share', desc: 'Iconița cu săgeata în sus din bara Safari' },
+                { icon: <MoreHorizontal className="w-3.5 h-3.5 text-green-600" />, bg: "bg-green-100 dark:bg-green-900/40", step: '2. „Adaugă pe ecranul principal"', desc: 'Derulează în lista de opțiuni' },
+                { icon: <Leaf className="w-3.5 h-3.5 text-primary" />, bg: "bg-primary/10", step: '3. Apasă „Adaugă"', desc: 'Aplicația apare pe ecranul tău principal' },
+              ].map(({ icon, bg, step, desc }) => (
+                <div key={step} className="flex items-center gap-3 bg-muted/40 rounded-xl px-3 py-2.5">
+                  <div className={`w-7 h-7 rounded-full ${bg} flex items-center justify-center shrink-0`}>{icon}</div>
+                  <div>
+                    <p className="text-xs font-semibold">{step}</p>
+                    <p className="text-[11px] text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Setari() {
   const { user, logout } = useAuth();
@@ -44,6 +158,9 @@ export default function Setari() {
         </div>
         <p className="text-sm text-muted-foreground">Personalizează aplicația după preferințele tale</p>
       </div>
+
+      {/* Install card */}
+      <InstallCard />
 
       {/* Dark Mode */}
       <div className="bg-card border border-border/60 rounded-xl p-4">
