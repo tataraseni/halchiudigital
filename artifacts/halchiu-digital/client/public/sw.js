@@ -1,5 +1,5 @@
-const CACHE_VERSION = "halchiu-v3";
-const API_CACHE = "halchiu-api-v3";
+const CACHE_VERSION = "halchiu-v5";
+const API_CACHE = "halchiu-api-v5";
 
 const PRECACHE = ["/", "/primaria", "/servicii", "/evenimente", "/comunitate", "/afaceri", "/profil", "/offline.html"];
 const API_ROUTES = [
@@ -10,6 +10,8 @@ const API_ROUTES = [
   "/api/settings",
   "/api/notifications",
   "/api/services",
+  "/api/transport",
+  "/api/announcements",
 ];
 const SKIP_CACHE = ["/api/auth", "/api/admin", "/api/push"];
 
@@ -59,12 +61,18 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Navigation requests: serve page or offline fallback
+  // Navigation requests: network-first with offline fallback
   if (e.request.mode === "navigate") {
     e.respondWith(
-      fetch(e.request).catch(() =>
-        caches.match(e.request).then(c => c ?? caches.match("/offline.html"))
-      )
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_VERSION).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() =>
+          caches.match(e.request).then(c => c ?? caches.match("/offline.html"))
+        )
     );
     return;
   }
@@ -89,7 +97,7 @@ self.addEventListener("push", (e) => {
   let data = {};
   try { data = e.data.json(); } catch { data = { title: "Hălchiu Digital", body: e.data.text() }; }
 
-  const { title = "Hălchiu Digital", body = "", icon = "/favicon.png", badge = "/favicon.png", url = "/" } = data;
+  const { title = "Hălchiu Digital", body = "", icon = "/icon-192.png", badge = "/icon-192.png", url = "/" } = data;
 
   e.waitUntil(
     self.registration.showNotification(title, {

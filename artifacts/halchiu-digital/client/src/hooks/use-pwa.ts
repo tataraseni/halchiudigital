@@ -20,37 +20,78 @@ export function useServiceWorker() {
     navigator.serviceWorker
       .register("/sw.js", { scope: "/" })
       .then(reg => {
+        // Check for updates every 60s
+        const interval = setInterval(() => reg.update(), 60_000);
         // Background refresh every 5 min
         const refresh = () => reg.active?.postMessage("REFRESH_CACHE");
-        const interval = setInterval(refresh, 5 * 60 * 1000);
-        return () => clearInterval(interval);
+        const refreshInterval = setInterval(refresh, 5 * 60_000);
+        return () => { clearInterval(interval); clearInterval(refreshInterval); };
       })
       .catch(() => {});
   }, []);
 }
 
+// ── Platform detection ────────────────────────────────────────────────────────
+export function isIOS(): boolean {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+export function isAndroid(): boolean {
+  return /android/i.test(navigator.userAgent);
+}
+
+export function isMobile(): boolean {
+  return isIOS() || isAndroid() || /mobi|tablet/i.test(navigator.userAgent);
+}
+
+export function isInStandaloneMode(): boolean {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator && (window.navigator as any).standalone === true)
+  );
+}
+
 // ── Install Prompt ────────────────────────────────────────────────────────────
-const VISIT_KEY = "halchiu_visits";
-const INSTALL_DISMISSED_KEY = "halchiu_install_dismissed";
-const SHOW_AFTER_VISITS = 3;
+const INSTALL_DISMISSED_KEY = "halchiu_install_dismissed_v2";
+const INSTALL_SHOWN_KEY = "halchiu_install_shown";
 
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [platform, setPlatform] = useState<"android" | "ios" | "other">("other");
 
   useEffect(() => {
-    // Increment visit counter
-    const visits = parseInt(localStorage.getItem(VISIT_KEY) ?? "0") + 1;
-    localStorage.setItem(VISIT_KEY, String(visits));
+    // Don't show if already installed
+    if (isInStandaloneMode()) return;
 
     const dismissed = localStorage.getItem(INSTALL_DISMISSED_KEY) === "true";
     if (dismissed) return;
 
+    const alreadyShown = localStorage.getItem(INSTALL_SHOWN_KEY) === "true";
+
+    if (isIOS()) {
+      setPlatform("ios");
+      // On iOS, show after a short delay on first visit (no event available)
+      if (!alreadyShown) {
+        const t = setTimeout(() => {
+          setShowPrompt(true);
+          localStorage.setItem(INSTALL_SHOWN_KEY, "true");
+        }, 4000);
+        return () => clearTimeout(t);
+      }
+    } else if (isAndroid() || isMobile()) {
+      setPlatform("android");
+    }
+
+    // Chrome / Android: listen for beforeinstallprompt
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (visits >= SHOW_AFTER_VISITS) {
-        setTimeout(() => setShowPrompt(true), 3000);
+      if (!alreadyShown) {
+        setTimeout(() => {
+          setShowPrompt(true);
+          localStorage.setItem(INSTALL_SHOWN_KEY, "true");
+        }, 3000);
       }
     };
     window.addEventListener("beforeinstallprompt", handler as any);
@@ -58,12 +99,20 @@ export function useInstallPrompt() {
   }, []);
 
   const install = async () => {
+    if (platform === "ios") {
+      // iOS: just dismiss, user follows manual steps
+      setShowPrompt(false);
+      localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
+      return;
+    }
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
+    const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     setShowPrompt(false);
-    localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
+    if (outcome === "accepted") {
+      localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
+    }
   };
 
   const dismiss = () => {
@@ -71,7 +120,7 @@ export function useInstallPrompt() {
     localStorage.setItem(INSTALL_DISMISSED_KEY, "true");
   };
 
-  return { showPrompt, install, dismiss };
+  return { showPrompt, install, dismiss, platform, isIOS: platform === "ios" };
 }
 
 // ── Haptic feedback ───────────────────────────────────────────────────────────
