@@ -8,9 +8,11 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
+  email: text("email").unique(),
   phone: text("phone"),
   role: text("role").notNull().default("cetatean"),
   points: integer("points").default(0),
+  isSuperAdmin: boolean("is_super_admin").default(false),
   notificationPrefs: text("notification_prefs"),  // JSON: NotificationPrefs
   createdAt: timestamp("created_at").defaultNow(),
 });

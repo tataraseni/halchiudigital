@@ -136,7 +136,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/auth/login", async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ message: "Completează toate câmpurile" });
-    const user = await storage.getUserByUsername(username);
+    // Try username first, then email (for super admin or any email-based login)
+    let user = await storage.getUserByUsername(username);
+    if (!user) user = await storage.getUserByEmail(username);
     if (!user) return res.status(401).json({ message: "Utilizator sau parolă incorectă" });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: "Utilizator sau parolă incorectă" });
@@ -144,7 +146,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     req.session.userRole = user.role as Role;
     req.session.userName = user.name;
     req.session.username = user.username;
-    res.json({ id: user.id, username: user.username, name: user.name, role: user.role });
+    res.json({ id: user.id, username: user.username, name: user.name, role: user.role, isSuperAdmin: user.isSuperAdmin ?? false });
   });
 
   app.post("/api/auth/logout", (req, res) => {
@@ -745,8 +747,43 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         weather_cache
       RESTART IDENTITY CASCADE
     `);
-    await pool.query(`DELETE FROM users WHERE id != $1`, [adminId]);
-    res.json({ ok: true, message: "Conținut resetat cu succes. Contul tău a fost păstrat." });
+    // Preserve super admin account always; preserve current session user as fallback
+    await pool.query(`DELETE FROM users WHERE (is_super_admin IS NOT TRUE) AND id != $1`, [adminId]);
+    res.json({ ok: true, message: "Conținut resetat cu succes. Contul super admin a fost păstrat." });
+  });
+
+  // ─── ADMIN: SUPER ADMIN SETUP ─────────────────────────────────────────────
+  app.get("/api/admin/super-admin/config", requireRole("administrator"), async (_req, res) => {
+    const sa = await storage.getSuperAdmin();
+    if (!sa) return res.json({ configured: false });
+    res.json({ configured: true, name: sa.name, email: sa.email ?? "" });
+  });
+
+  app.post("/api/admin/super-admin/setup", requireRole("administrator"), async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name?.trim() || !email?.trim() || !password?.trim()) {
+      return res.status(400).json({ message: "Completează toate câmpurile" });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Parola trebuie să aibă cel puțin 8 caractere" });
+    }
+    const emailLower = email.toLowerCase().trim();
+    const hashed = await bcrypt.hash(password, 10);
+
+    const existing = await storage.getSuperAdmin();
+    if (existing) {
+      // Update existing super admin
+      await storage.updateUser(existing.id, { name: name.trim(), email: emailLower, password: hashed });
+      res.json({ ok: true, message: "Contul super admin a fost actualizat." });
+    } else {
+      // Check if email already used by another account
+      const byEmail = await storage.getUserByEmail(emailLower);
+      if (byEmail) return res.status(409).json({ message: "Adresa de email este deja folosită de un alt cont." });
+      // Create super admin with a unique internal username
+      const username = `__superadmin_${Date.now()}__`;
+      await storage.createUser({ username, password: hashed, name: name.trim(), email: emailLower, role: "administrator", isSuperAdmin: true } as any);
+      res.json({ ok: true, message: "Contul super admin a fost creat. Poți intra cu email-ul și parola setate." });
+    }
   });
 
   // ─── MARKETPLACE ─────────────────────────────────────────────────────────
@@ -1379,6 +1416,11 @@ async function seedDatabase() {
 
   // Migrate events table — add category column
   await db.execute(`ALTER TABLE events ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'general'`);
+
+  // Migrate users table — add email and is_super_admin columns
+  await db.execute(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT`);
+  await db.execute(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE`);
+  await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email) WHERE email IS NOT NULL`);
 
   // New tables
   await db.execute(`

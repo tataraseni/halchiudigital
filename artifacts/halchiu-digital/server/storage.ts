@@ -48,6 +48,8 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getSuperAdmin(): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<void>;
@@ -225,6 +227,8 @@ export class DatabaseStorage implements IStorage {
   async getUsers() { return db.select().from(users).orderBy(users.name); }
   async getUserById(id: number) { const [u] = await db.select().from(users).where(eq(users.id, id)); return u; }
   async getUserByUsername(username: string) { const [u] = await db.select().from(users).where(eq(users.username, username)); return u; }
+  async getUserByEmail(email: string) { const [u] = await db.select().from(users).where(eq(users.email, email)); return u; }
+  async getSuperAdmin() { const [u] = await db.select().from(users).where(eq(users.isSuperAdmin, true)); return u; }
   async createUser(user: InsertUser) { const [u] = await db.insert(users).values(user).returning(); return u; }
   async updateUser(id: number, data: Partial<InsertUser>) {
     const [u] = await db.update(users).set(data).where(eq(users.id, id)).returning();

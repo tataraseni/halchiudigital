@@ -57,11 +57,11 @@ export default function Login() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="username" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Utilizator</FormLabel>
+                  <FormLabel>Utilizator sau email</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input className="pl-9" placeholder="username" {...field} data-testid="input-username" />
+                      <Input className="pl-9" placeholder="username sau email" {...field} data-testid="input-username" />
                     </div>
                   </FormControl>
                   <FormMessage />

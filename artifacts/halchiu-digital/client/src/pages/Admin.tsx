@@ -16,7 +16,7 @@ import {
   BarChart3, TrendingUp, Clock, CheckCircle2, MapPin, Activity, Target, RefreshCw,
   ShieldCheck, ShieldX, BadgeCheck, ThumbsUp, ThumbsDown, Eye, EyeOff,
   Stethoscope, Bell, Wrench, Briefcase, Megaphone, Building2, Send, BellRing, ExternalLink,
-  Bus, Train, Car, Snowflake, TriangleAlert, RotateCcw
+  Bus, Train, Car, Snowflake, TriangleAlert, RotateCcw, KeyRound, UserCog
 } from "lucide-react";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -451,6 +451,150 @@ function SettingRow({ settingKey, label, textarea }: { settingKey: string; label
   );
 }
 
+// ─── SUPER ADMIN SETUP CARD ──────────────────────────────────────────────────
+function SuperAdminSetupCard() {
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const { data, isLoading, refetch } = useQuery<{ configured: boolean; name?: string; email?: string }>({
+    queryKey: ["/api/admin/super-admin/config"],
+    queryFn: () => fetch("/api/admin/super-admin/config").then(r => r.json()),
+  });
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/super-admin/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message);
+      toast({ title: "Super Admin salvat", description: body.message });
+      setPassword("");
+      setEditing(false);
+      refetch();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Eroare", description: e.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEdit = () => {
+    setName(data?.name ?? "");
+    setEmail(data?.email ?? "");
+    setPassword("");
+    setEditing(true);
+  };
+
+  return (
+    <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/40">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <UserCog className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-display font-semibold text-sm">Cont Super Administrator</p>
+          <p className="text-[11px] text-muted-foreground">Persistent la resetare. Autentificare cu email.</p>
+        </div>
+        {!isLoading && data?.configured && !editing && (
+          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 shrink-0" onClick={startEdit}>
+            <Pencil className="w-3 h-3" />Modifică
+          </Button>
+        )}
+      </div>
+      <div className="px-4 py-3">
+        {isLoading ? (
+          <p className="text-xs text-muted-foreground">Se încarcă...</p>
+        ) : !editing && data?.configured ? (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+              <span className="text-xs font-semibold text-green-700 dark:text-green-400">Cont configurat</span>
+            </div>
+            <p className="text-sm font-medium mt-1">{data.name}</p>
+            <p className="text-xs text-muted-foreground">{data.email}</p>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              Autentifică-te cu acest email și parola setată. Contul este păstrat la orice resetare a bazei de date.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {!data?.configured && (
+              <p className="text-xs text-muted-foreground mb-1">
+                Creează un cont personalizat de administrator care supraviețuiește resetărilor bazei de date.
+              </p>
+            )}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Nume complet</label>
+              <Input
+                placeholder="ex. Ion Popescu"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Adresă de email</label>
+              <Input
+                type="email"
+                placeholder="ex. admin@halchiu.ro"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Parolă {data?.configured ? "(lasă gol pentru a păstra parola actuală — sau introdu una nouă)" : "(minim 8 caractere)"}
+              </label>
+              <div className="relative">
+                <Input
+                  type={showPw ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="h-8 text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPw(v => !v)}
+                >
+                  {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={handleSave}
+                disabled={saving || !name.trim() || !email.trim() || (!data?.configured && !password.trim())}
+              >
+                <KeyRound className="w-3 h-3" />
+                {saving ? "Se salvează..." : data?.configured ? "Actualizează" : "Creează cont"}
+              </Button>
+              {editing && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>
+                  Anulează
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SettingsTab() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -533,6 +677,9 @@ function SettingsTab() {
         </div>
       ))}
 
+      {/* Super Admin personalizat */}
+      <SuperAdminSetupCard />
+
       {/* Danger zone — DB reset */}
       <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2">
@@ -540,7 +687,7 @@ function SettingsTab() {
           <h3 className="font-display font-semibold text-sm text-red-800 dark:text-red-400">Resetare conținut bază de date</h3>
         </div>
         <p className="text-xs text-red-700 dark:text-red-400">
-          Șterge tot conținutul: postări, sesizări, afaceri, evenimente, marketplace, joburi, servicii, transport, sănătate, chat și toți utilizatorii <strong>cu excepția contului tău</strong>.
+          Șterge tot conținutul: postări, sesizări, afaceri, evenimente, marketplace, joburi, servicii, transport, sănătate, chat și toți utilizatorii <strong>cu excepția contului super admin</strong>.
           Setările aplicației sunt păstrate. Această acțiune este <strong>ireversibilă</strong>.
         </p>
         {!confirmReset ? (
