@@ -95,28 +95,30 @@ export default function Login() {
           </Link>
         </div>
 
-        <div className="mt-3 bg-muted/50 rounded-xl p-3 text-xs text-muted-foreground">
-          <p className="font-semibold text-foreground mb-1">Conturi demo:</p>
-          <div className="space-y-0.5">
-            {[
-              ["admin", "admin123", "Administrator"],
-              ["primar", "primar123", "Primar"],
-              ["viceprimar", "vice123", "Viceprimar"],
-              ["functionar", "func123", "Funcționar Public"],
-              ["moderator", "mod123", "Moderator"],
-              ["cetatean", "cet123", "Cetățean"],
-            ].map(([u, p, r]) => (
-              <div key={u} className="flex gap-2 cursor-pointer hover:text-foreground transition-colors"
-                onClick={() => { form.setValue("username", u); form.setValue("password", p); }}
-                data-testid={`demo-${u}`}>
-                <span className="font-mono font-medium text-foreground">{u}</span>
-                <span>/ {p}</span>
-                <span className="ml-auto text-primary">{r}</span>
-              </div>
-            ))}
+        {import.meta.env.DEV && (
+          <div className="mt-3 bg-muted/50 rounded-xl p-3 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground mb-1">Conturi demo:</p>
+            <div className="space-y-0.5">
+              {[
+                ["admin", "admin123", "Administrator"],
+                ["primar", "primar123", "Primar"],
+                ["viceprimar", "vice123", "Viceprimar"],
+                ["functionar", "func123", "Funcționar Public"],
+                ["moderator", "mod123", "Moderator"],
+                ["cetatean", "cet123", "Cetățean"],
+              ].map(([u, p, r]) => (
+                <div key={u} className="flex gap-2 cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => { form.setValue("username", u); form.setValue("password", p); }}
+                  data-testid={`demo-${u}`}>
+                  <span className="font-mono font-medium text-foreground">{u}</span>
+                  <span>/ {p}</span>
+                  <span className="ml-auto text-primary">{r}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 opacity-70">Click pe un rând pentru a completa automat.</p>
           </div>
-          <p className="mt-2 opacity-70">Click pe un rând pentru a completa automat.</p>
-        </div>
+        )}
       </div>
     </div>
   );

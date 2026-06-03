@@ -1505,26 +1505,28 @@ function RolesTab() {
         );
       })}
 
-      {/* Demo accounts info */}
-      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4">
-        <p className="text-xs font-semibold text-amber-800 dark:text-amber-400 mb-2">Conturi demo disponibile</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          {[
-            { u: "admin", p: "admin123", r: "Administrator" },
-            { u: "primar", p: "primar123", r: "Primar" },
-            { u: "viceprimar", p: "vice123", r: "Viceprimar" },
-            { u: "functionar", p: "func123", r: "Funcționar" },
-            { u: "moderator", p: "mod123", r: "Moderator" },
-            { u: "cetatean", p: "cet123", r: "Cetățean" },
-          ].map(a => (
-            <div key={a.u} className="text-[11px]">
-              <span className="font-semibold text-amber-900 dark:text-amber-300">{a.u}</span>
-              <span className="text-amber-700/70 dark:text-amber-500/70"> / {a.p}</span>
-              <span className="text-amber-600/60 dark:text-amber-600/60 ml-1">({a.r})</span>
-            </div>
-          ))}
+      {/* Demo accounts info — visible only in development */}
+      {import.meta.env.DEV && (
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4">
+          <p className="text-xs font-semibold text-amber-800 dark:text-amber-400 mb-2">Conturi demo disponibile</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {[
+              { u: "admin", p: "admin123", r: "Administrator" },
+              { u: "primar", p: "primar123", r: "Primar" },
+              { u: "viceprimar", p: "vice123", r: "Viceprimar" },
+              { u: "functionar", p: "func123", r: "Funcționar" },
+              { u: "moderator", p: "mod123", r: "Moderator" },
+              { u: "cetatean", p: "cet123", r: "Cetățean" },
+            ].map(a => (
+              <div key={a.u} className="text-[11px]">
+                <span className="font-semibold text-amber-900 dark:text-amber-300">{a.u}</span>
+                <span className="text-amber-700/70 dark:text-amber-500/70"> / {a.p}</span>
+                <span className="text-amber-600/60 dark:text-amber-600/60 ml-1">({a.r})</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
