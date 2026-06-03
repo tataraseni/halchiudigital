@@ -87,10 +87,15 @@ export default function Login() {
         </div>
 
         {/* Demo credentials */}
-        <div className="mt-4 text-center">
+        <div className="mt-4 flex items-center justify-between">
           <Link href="/register">
             <button className="text-sm text-primary hover:text-primary/80 transition-colors font-medium" data-testid="link-register">
-              Nu ai cont? Înregistrează-te ca cetățean →
+              Nu ai cont? Înregistrează-te →
+            </button>
+          </Link>
+          <Link href="/reset-parola">
+            <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Ai uitat parola?
             </button>
           </Link>
         </div>

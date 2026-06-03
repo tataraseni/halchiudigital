@@ -153,6 +153,70 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     req.session.destroy(() => res.json({ ok: true }));
   });
 
+  // ─── RESET PAROLĂ SUPER ADMIN ─────────────────────────────────────────────
+  // Stochează OTP-urile în memorie (email → { otp, expiry })
+  const resetTokens = new Map<string, { otp: string; expiry: number }>();
+
+  app.post("/api/auth/reset-request", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ message: "Email obligatoriu." });
+      const emailLower = String(email).toLowerCase().trim();
+
+      // Verifică dacă există un super admin cu acest email
+      const user = await storage.getUserByEmail(emailLower);
+      const isSuperAdmin = user && (user as any).isSuperAdmin;
+
+      // Generează OTP indiferent (nu dezvăluim dacă email-ul există)
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      const expiry = Date.now() + 15 * 60 * 1000; // 15 minute
+
+      if (isSuperAdmin) {
+        resetTokens.set(emailLower, { otp, expiry });
+        req.log.info(`[RESET-PAROLA] Cod resetare pentru ${emailLower}: ${otp} (valabil 15 minute)`);
+      }
+
+      // Răspuns identic indiferent de rezultat (securitate)
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  app.post("/api/auth/reset-confirm", async (req, res) => {
+    try {
+      const { email, otp, password } = req.body;
+      if (!email || !otp || !password) return res.status(400).json({ message: "Câmpuri lipsă." });
+      if (password.length < 8) return res.status(400).json({ message: "Parola trebuie să aibă cel puțin 8 caractere." });
+
+      const emailLower = String(email).toLowerCase().trim();
+      const token = resetTokens.get(emailLower);
+
+      if (!token) return res.status(400).json({ message: "Cod invalid sau expirat. Solicită un cod nou." });
+      if (Date.now() > token.expiry) {
+        resetTokens.delete(emailLower);
+        return res.status(400).json({ message: "Codul a expirat (15 minute). Solicită un cod nou." });
+      }
+      if (token.otp !== String(otp).trim()) {
+        return res.status(400).json({ message: "Cod incorect. Verifică consola Replit și încearcă din nou." });
+      }
+
+      const user = await storage.getUserByEmail(emailLower);
+      if (!user || !(user as any).isSuperAdmin) {
+        return res.status(400).json({ message: "Cont invalid." });
+      }
+
+      const hashed = await bcrypt.hash(password, 10);
+      await storage.updateUser(user.id, { password: hashed });
+      resetTokens.delete(emailLower);
+
+      req.log.info(`[RESET-PAROLA] Parola super admin ${emailLower} a fost resetată cu succes.`);
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   app.get("/api/auth/me", async (req, res) => {
     if (!req.session.userId) return res.status(401).json({ message: "Neautentificat" });
     const user = await storage.getUserById(req.session.userId);

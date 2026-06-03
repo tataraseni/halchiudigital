@@ -17,6 +17,7 @@ import Setari from "@/pages/Setari";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Admin from "@/pages/Admin";
+import ResetPassword from "@/pages/ResetPassword";
 import QRInstall from "@/pages/QRInstall";
 import { BottomNav } from "@/components/bottom-nav";
 import { LocationGate } from "@/components/location-gate";
@@ -145,7 +146,7 @@ function AppShell() {
   const [path] = useLocation();
   useServiceWorker();
 
-  const isAuthPath = path === "/login" || path === "/admin" || path === "/register";
+  const isAuthPath = path === "/login" || path === "/admin" || path === "/register" || path === "/reset-parola";
   const isQRPath = path === "/qr";
 
   if (isQRPath) return <QRInstall />;
@@ -165,6 +166,7 @@ function AppShell() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/reset-parola" component={ResetPassword} />
         <Route path="/admin" component={Admin} />
       </Switch>
     );
