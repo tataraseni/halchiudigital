@@ -16,7 +16,7 @@ import {
   BarChart3, TrendingUp, Clock, CheckCircle2, MapPin, Activity, Target, RefreshCw,
   ShieldCheck, ShieldX, BadgeCheck, ThumbsUp, ThumbsDown, Eye, EyeOff,
   Stethoscope, Bell, Wrench, Briefcase, Megaphone, Building2, Send, BellRing, ExternalLink,
-  Bus, Train, Car, Snowflake, TriangleAlert, RotateCcw, KeyRound, UserCog
+  Bus, Train, Car, Snowflake, TriangleAlert, RotateCcw, KeyRound, UserCog, Info
 } from "lucide-react";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -603,10 +603,43 @@ function SettingsTab() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ "Identitate Aplicație": true });
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [bannerText, setBannerText] = useState("");
+  const [bannerType, setBannerType] = useState<"info" | "warning" | "urgent">("warning");
 
   const toggle = (group: string) => setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
 
   const demoMode = settings["demo_mode"] === "true";
+  const bannerActive = settings["site_banner_active"] === "true";
+  const currentBannerText = settings["site_banner_text"] ?? "";
+  const currentBannerType = (settings["site_banner_type"] ?? "warning") as "info" | "warning" | "urgent";
+
+  const publishBanner = () => {
+    if (!bannerText.trim()) return;
+    updateMutation.mutate({ key: "site_banner_text", value: bannerText.trim() }, {
+      onSuccess: () => {
+        updateMutation.mutate({ key: "site_banner_type", value: bannerType }, {
+          onSuccess: () => {
+            updateMutation.mutate({ key: "site_banner_active", value: "true" }, {
+              onSuccess: () => {
+                qc.invalidateQueries({ queryKey: ["/api/settings"] });
+                toast({ title: "Banner publicat", description: "Mesajul este vizibil acum pentru toți utilizatorii." });
+                setBannerText("");
+              },
+            });
+          },
+        });
+      },
+    });
+  };
+
+  const closeBanner = () => {
+    updateMutation.mutate({ key: "site_banner_active", value: "false" }, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/settings"] });
+        toast({ title: "Banner dezactivat" });
+      },
+    });
+  };
 
   const toggleDemoMode = () => {
     const newVal = demoMode ? "false" : "true";
@@ -636,6 +669,54 @@ function SettingsTab() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">Modificările se aplică imediat în toată aplicația.</p>
+
+      {/* Site banner */}
+      <div className={`border rounded-xl p-4 space-y-3 ${bannerActive ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/40" : "bg-card border-card-border"}`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${bannerActive ? "bg-red-100 dark:bg-red-900/40" : "bg-muted"}`}>
+            <Megaphone className={`w-4.5 h-4.5 ${bannerActive ? "text-red-600" : "text-muted-foreground"}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Banner de urgență</p>
+            <p className="text-xs text-muted-foreground">Apare în bara de sus pentru toți utilizatorii.</p>
+          </div>
+          {bannerActive && (
+            <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-red-300 text-red-600 hover:bg-red-50" onClick={closeBanner} disabled={updateMutation.isPending}>
+              <X className="w-3.5 h-3.5" />Dezactivează
+            </Button>
+          )}
+        </div>
+
+        {bannerActive && currentBannerText && (
+          <div className={`text-xs px-3 py-2 rounded-lg font-medium flex items-center gap-2 ${currentBannerType === "urgent" ? "bg-red-600 text-white" : currentBannerType === "warning" ? "bg-amber-500 text-white" : "bg-primary text-white"}`}>
+            {currentBannerType === "urgent" ? <Megaphone className="w-3.5 h-3.5 shrink-0" /> : currentBannerType === "warning" ? <TriangleAlert className="w-3.5 h-3.5 shrink-0" /> : <Info className="w-3.5 h-3.5 shrink-0" />}
+            <span>{currentBannerText}</span>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <div className="flex gap-1.5">
+            {(["info", "warning", "urgent"] as const).map(t => (
+              <button key={t} onClick={() => setBannerType(t)}
+                className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border transition-colors font-medium ${bannerType === t ? (t === "info" ? "bg-primary text-white border-primary" : t === "warning" ? "bg-amber-500 text-white border-amber-500" : "bg-red-600 text-white border-red-600") : "bg-card border-card-border text-muted-foreground hover:text-foreground"}`}>
+                {t === "info" ? <><Info className="w-3 h-3" />Info</> : t === "warning" ? <><TriangleAlert className="w-3 h-3" />Atenție</> : <><Megaphone className="w-3 h-3" />Urgent</>}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 text-xs border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="Ex: Apă oprită 10–14h în zona centrală"
+              value={bannerText}
+              onChange={e => setBannerText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && publishBanner()}
+            />
+            <Button size="sm" className="shrink-0 gap-1.5" onClick={publishBanner} disabled={!bannerText.trim() || updateMutation.isPending}>
+              <Send className="w-3.5 h-3.5" />Publică
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Demo mode toggle */}
       <div className={`border rounded-xl p-4 flex items-center gap-3 ${demoMode ? "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/50" : "bg-card border-card-border"}`}>

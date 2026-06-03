@@ -23,6 +23,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { LocationGate } from "@/components/location-gate";
 import { OfflineBanner } from "@/components/offline-banner";
 import { InstallPrompt } from "@/components/install-prompt";
+import { SiteBanner } from "@/components/site-banner";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -174,6 +175,7 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-background pb-16">
+      <SiteBanner />
       <OfflineBanner />
       <InstallPrompt />
       <AppHeader />
