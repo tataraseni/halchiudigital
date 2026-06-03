@@ -218,6 +218,7 @@ interface DbTransportRoute {
   direction: string;
   operator: string;
   departures: string;
+  departuresWeekend: string | null;
   notes: string | null;
   status: string;
 }
@@ -233,7 +234,8 @@ const TRANSPORT_BG_MAP: Record<string, string> = {
   taxi: "bg-yellow-50 dark:bg-yellow-950/30", maxitaxi: "bg-amber-50 dark:bg-amber-950/30", avion: "bg-sky-50 dark:bg-sky-950/30",
 };
 
-function parseDepartures(raw: string): string[] {
+function parseDepartures(raw: string | null | undefined): string[] {
+  if (!raw) return [];
   try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
 }
 
@@ -243,9 +245,23 @@ function getNextDepartures(departures: string[], count = 3): string[] {
   return departures.filter(d => { const [h, m] = d.split(":").map(Number); return h * 60 + m > nowMins; }).slice(0, count);
 }
 
+function isWeekend(): boolean {
+  const day = new Date().getDay(); // 0 = Sunday, 6 = Saturday
+  return day === 0 || day === 6;
+}
+
 function RouteCard({ route }: { route: DbTransportRoute }) {
   const [showAll, setShowAll] = useState(false);
-  const departures = parseDepartures(route.departures);
+  const [scheduleView, setScheduleView] = useState<"auto" | "weekday" | "weekend">("auto");
+
+  const weekdayDeps = parseDepartures(route.departures);
+  const weekendDeps = parseDepartures(route.departuresWeekend);
+  const hasWeekend = weekendDeps.length > 0;
+
+  const today = isWeekend();
+  const effectiveView = scheduleView === "auto" ? (today ? "weekend" : "weekday") : scheduleView;
+  const departures = (effectiveView === "weekend" && hasWeekend) ? weekendDeps : weekdayDeps;
+
   const nextDeps = getNextDepartures(departures);
   const Icon = TRANSPORT_ICON_MAP[route.type] ?? Bus;
   const color = TRANSPORT_COLOR_MAP[route.type] ?? "text-blue-600";
@@ -269,6 +285,30 @@ function RouteCard({ route }: { route: DbTransportRoute }) {
         </div>
       </div>
 
+      {/* Weekday / Weekend toggle — only shown when a weekend schedule exists */}
+      {hasWeekend && (
+        <div className="flex gap-1 bg-muted/40 rounded-lg p-0.5 mb-3">
+          {(["weekday", "weekend"] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setScheduleView(prev => prev === v ? "auto" : v)}
+              className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition-colors ${
+                effectiveView === v
+                  ? v === "weekend"
+                    ? "bg-violet-600 text-white"
+                    : "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {v === "weekday" ? "Luni – Vineri" : "Sâmbătă – Duminică"}
+              {scheduleView === "auto" && ((v === "weekend" && today) || (v === "weekday" && !today)) && (
+                <span className="ml-1 text-[9px] opacity-70">azi</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {departures.length > 0 ? (
         <>
           {nextDeps.length > 0 ? (
@@ -284,7 +324,7 @@ function RouteCard({ route }: { route: DbTransportRoute }) {
             </div>
           ) : (
             <div className="bg-muted/50 border border-border rounded-lg p-2.5 mb-3">
-              <p className="text-xs text-muted-foreground text-center">Nu mai sunt plecări azi. Mâine primul: {departures[0]}</p>
+              <p className="text-xs text-muted-foreground text-center">Nu mai sunt plecări azi. Primul mâine: {departures[0]}</p>
             </div>
           )}
           <button onClick={() => setShowAll(v => !v)}

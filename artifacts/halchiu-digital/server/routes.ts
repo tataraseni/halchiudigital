@@ -83,10 +83,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         direction TEXT NOT NULL,
         operator TEXT NOT NULL DEFAULT '',
         departures TEXT NOT NULL DEFAULT '[]',
+        departures_weekend TEXT,
         notes TEXT,
         status TEXT NOT NULL DEFAULT 'activ',
         created_at TIMESTAMP DEFAULT NOW()
       )
+    `);
+    await _pool.query(`
+      ALTER TABLE transport_routes ADD COLUMN IF NOT EXISTS departures_weekend TEXT;
     `);
   } catch (_) {}
 
@@ -1531,10 +1535,10 @@ async function seedDatabase() {
   const existingTransport = await storage.getTransportRoutes();
   if (existingTransport.length === 0) {
     await Promise.all([
-      storage.createTransportRoute({ type: "autobuz", line: "Linia 19", direction: "Hălchiu → Brașov (Gara CFR)", operator: "RAT Brașov", departures: JSON.stringify(["06:05","06:45","07:20","08:00","08:35","09:15","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"]), notes: "Program L–V, cu unele curse în weekend.", status: "activ" }),
-      storage.createTransportRoute({ type: "autobuz", line: "Linia 19", direction: "Brașov (Gara CFR) → Hălchiu", operator: "RAT Brașov", departures: JSON.stringify(["06:30","07:15","07:50","08:30","09:10","09:50","10:45","11:45","12:45","13:45","14:45","15:45","16:45","17:45","18:45","19:45","20:45"]), notes: "Program L–V, cu unele curse în weekend.", status: "activ" }),
-      storage.createTransportRoute({ type: "maxitaxi", line: "Maxitaxi", direction: "Hălchiu ↔ Brașov (frecvent)", operator: "Operator privat", departures: JSON.stringify(["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30"]), notes: "Frecvență ridicată în orele de vârf.", status: "activ" }),
-      storage.createTransportRoute({ type: "taxi", line: "Taxi Hălchiu", direction: "Hălchiu – oriunde", operator: "Taxi local", departures: JSON.stringify([]), notes: "Contact: 0266 XXX XXX. Disponibil 24/7.", status: "activ" }),
+      storage.createTransportRoute({ type: "autobuz", line: "Linia 19", direction: "Hălchiu → Brașov (Gara CFR)", operator: "RAT Brașov", departures: JSON.stringify(["06:05","06:45","07:20","08:00","08:35","09:15","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"]), departuresWeekend: JSON.stringify(["07:30","09:00","11:00","13:00","15:00","17:00","19:00"]), notes: "Program L–V și weekend (orar redus S–D).", status: "activ" }),
+      storage.createTransportRoute({ type: "autobuz", line: "Linia 19", direction: "Brașov (Gara CFR) → Hălchiu", operator: "RAT Brașov", departures: JSON.stringify(["06:30","07:15","07:50","08:30","09:10","09:50","10:45","11:45","12:45","13:45","14:45","15:45","16:45","17:45","18:45","19:45","20:45"]), departuresWeekend: JSON.stringify(["08:00","09:30","11:30","13:30","15:30","17:30","19:30"]), notes: "Program L–V și weekend (orar redus S–D).", status: "activ" }),
+      storage.createTransportRoute({ type: "maxitaxi", line: "Maxitaxi", direction: "Hălchiu ↔ Brașov (frecvent)", operator: "Operator privat", departures: JSON.stringify(["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30"]), departuresWeekend: JSON.stringify(["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"]), notes: "Frecvență mai redusă în weekend.", status: "activ" }),
+      storage.createTransportRoute({ type: "taxi", line: "Taxi Hălchiu", direction: "Hălchiu – oriunde", operator: "Taxi local", departures: JSON.stringify([]), departuresWeekend: null, notes: "Contact: 0266 XXX XXX. Disponibil 24/7.", status: "activ" }),
     ]);
   }
 

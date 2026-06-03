@@ -1399,7 +1399,7 @@ const TRANSPORT_TYPE_LABELS_ADMIN: Record<string, string> = {
 
 interface TransportRoute {
   id: number; type: string; line: string; direction: string; operator: string;
-  departures: string; notes: string | null; status: string;
+  departures: string; departuresWeekend: string | null; notes: string | null; status: string;
 }
 
 function TransportAdminSection() {
@@ -1410,7 +1410,7 @@ function TransportAdminSection() {
     queryFn: () => api("GET", "/api/admin/transport"),
   });
   const [creating, setCreating] = useState(false);
-  const [newRoute, setNewRoute] = useState({ type: "autobuz", line: "", direction: "", operator: "", departures: "", notes: "", status: "activ" });
+  const [newRoute, setNewRoute] = useState({ type: "autobuz", line: "", direction: "", operator: "", departures: "", departuresWeekend: "", notes: "", status: "activ" });
 
   const inv = () => { qc.invalidateQueries({ queryKey: ["/api/admin/transport"] }); qc.invalidateQueries({ queryKey: ["/api/transport"] }); };
   const deleteMutation = useMutation({ mutationFn: (id: number) => api("DELETE", `/api/transport/${id}`), onSuccess: () => { inv(); toast({ title: "Rută ștearsă" }); } });
@@ -1419,12 +1419,15 @@ function TransportAdminSection() {
     mutationFn: (d: typeof newRoute) => api("POST", "/api/transport", {
       ...d,
       departures: JSON.stringify(d.departures.split(",").map(s => s.trim()).filter(Boolean)),
+      departuresWeekend: d.departuresWeekend.trim()
+        ? JSON.stringify(d.departuresWeekend.split(",").map(s => s.trim()).filter(Boolean))
+        : null,
     }),
-    onSuccess: () => { inv(); setCreating(false); setNewRoute({ type: "autobuz", line: "", direction: "", operator: "", departures: "", notes: "", status: "activ" }); toast({ title: "Rută adăugată" }); },
+    onSuccess: () => { inv(); setCreating(false); setNewRoute({ type: "autobuz", line: "", direction: "", operator: "", departures: "", departuresWeekend: "", notes: "", status: "activ" }); toast({ title: "Rută adăugată" }); },
     onError: (e: Error) => toast({ variant: "destructive", title: "Eroare", description: e.message }),
   });
 
-  const parseDeps = (d: string) => { try { return JSON.parse(d) as string[]; } catch { return []; } };
+  const parseDeps = (d: string | null | undefined) => { try { return JSON.parse(d ?? "[]") as string[]; } catch { return []; } };
 
   return (
     <div className="space-y-3">
@@ -1442,7 +1445,14 @@ function TransportAdminSection() {
           <Input placeholder="Linie (ex: Linia 19, CFR Călători)" value={newRoute.line} onChange={e => setNewRoute(p=>({...p,line:e.target.value}))} />
           <Input placeholder="Direcție (ex: Hălchiu → Brașov)" value={newRoute.direction} onChange={e => setNewRoute(p=>({...p,direction:e.target.value}))} />
           <Input placeholder="Operator (ex: RAT Brașov)" value={newRoute.operator} onChange={e => setNewRoute(p=>({...p,operator:e.target.value}))} />
-          <Input placeholder="Plecări separate prin virgulă (ex: 06:05, 07:20)" value={newRoute.departures} onChange={e => setNewRoute(p=>({...p,departures:e.target.value}))} />
+          <div className="space-y-1">
+            <p className="text-[11px] text-muted-foreground font-medium">Plecări Luni–Vineri (separate prin virgulă)</p>
+            <Input placeholder="ex: 06:05, 07:20, 08:00" value={newRoute.departures} onChange={e => setNewRoute(p=>({...p,departures:e.target.value}))} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] text-muted-foreground font-medium">Plecări Weekend — opțional (Sâmbătă–Duminică)</p>
+            <Input placeholder="ex: 08:00, 10:00, 14:00 (lasă gol dacă același orar)" value={newRoute.departuresWeekend} onChange={e => setNewRoute(p=>({...p,departuresWeekend:e.target.value}))} />
+          </div>
           <Input placeholder="Note (opțional)" value={newRoute.notes} onChange={e => setNewRoute(p=>({...p,notes:e.target.value}))} />
           <Button size="sm" className="w-full" onClick={() => createMutation.mutate(newRoute)} disabled={!newRoute.line || !newRoute.direction || createMutation.isPending}>Adaugă rută</Button>
         </div>
@@ -1466,12 +1476,27 @@ function TransportAdminSection() {
             <EditableRow label="Direcție" value={r.direction} onSave={v => updateMutation.mutate({ id: r.id, data: { direction: v } })} />
             <EditableRow label="Operator" value={r.operator} onSave={v => updateMutation.mutate({ id: r.id, data: { operator: v } })} />
             <EditableRow label="Note" value={r.notes ?? ""} onSave={v => updateMutation.mutate({ id: r.id, data: { notes: v } })} />
-            <div className="mt-2">
-              <p className="text-[10px] text-muted-foreground mb-1">Plecări ({deps.length}): {deps.join(", ") || "—"}</p>
-              <EditableRow label="Plecări (separate prin virgulă)" value={deps.join(", ")} onSave={v => {
-                const arr = v.split(",").map(s => s.trim()).filter(Boolean);
-                updateMutation.mutate({ id: r.id, data: { departures: JSON.stringify(arr) } });
-              }} />
+            <div className="mt-2 space-y-1.5">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-0.5">Plecări L–V ({deps.length}): <span className="text-foreground/60">{deps.slice(0,5).join(", ")}{deps.length > 5 ? "…" : ""}</span></p>
+                <EditableRow label="Plecări L–V (virgulă)" value={deps.join(", ")} onSave={v => {
+                  const arr = v.split(",").map(s => s.trim()).filter(Boolean);
+                  updateMutation.mutate({ id: r.id, data: { departures: JSON.stringify(arr) } });
+                }} />
+              </div>
+              <div>
+                {(() => { const wd = parseDeps(r.departuresWeekend); return (
+                  <>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">
+                      Plecări weekend ({wd.length}): {wd.length > 0 ? <span className="text-foreground/60">{wd.slice(0,5).join(", ")}{wd.length > 5 ? "…" : ""}</span> : <span className="italic">același orar ca L–V</span>}
+                    </p>
+                    <EditableRow label="Plecări S–D (virgulă, gol = același orar)" value={wd.join(", ")} onSave={v => {
+                      const arr = v.split(",").map(s => s.trim()).filter(Boolean);
+                      updateMutation.mutate({ id: r.id, data: { departuresWeekend: arr.length ? JSON.stringify(arr) : null } });
+                    }} />
+                  </>
+                ); })()}
+              </div>
             </div>
             <div className="mt-3 pt-3 border-t border-border/40">
               <Select value={r.status} onValueChange={v => updateMutation.mutate({ id: r.id, data: { status: v } })}>

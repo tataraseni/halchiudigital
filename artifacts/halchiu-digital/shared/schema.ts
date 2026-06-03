@@ -595,7 +595,8 @@ export const transportRoutes = pgTable("transport_routes", {
   line: text("line").notNull(),
   direction: text("direction").notNull(),
   operator: text("operator").notNull().default(""),
-  departures: text("departures").notNull().default("[]"),  // JSON: string[]
+  departures: text("departures").notNull().default("[]"),        // JSON: string[] weekday schedule
+  departuresWeekend: text("departures_weekend"),                  // JSON: string[] | null — weekend schedule
   notes: text("notes"),
   status: text("status").notNull().default("activ"),
   createdAt: timestamp("created_at").defaultNow(),
